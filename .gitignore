@@ -38,3 +38,19 @@ jspm_packages
 
 # gulp
 gulpfile.js
+
+
+# Created by https://www.gitignore.io/api/vapor
+
+### Vapor ###
+Config/secrets
+
+### Vapor Patch ###
+Packages
+.build
+xcuserdata
+*.xcodeproj
+DerivedData/
+.DS_Store
+
+# End of https://www.gitignore.io/api/vapor
