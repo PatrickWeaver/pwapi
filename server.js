@@ -5,6 +5,9 @@ const express = require('express');
 // Constants
 var port = 8000;
 
+// Public
+app.use(express.static('public'));
+
 // Data
 var data = {};
 data.hello = "world";
