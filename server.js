@@ -1,9 +1,19 @@
 'use strict';
 
 const express = require('express');
+const pgp = require('pg-promise')();
 
 // Constants
-var port = 8000;
+const port = 8000;
+const app = express();
+const connection = {
+    host: 'localhost',
+    port: 5432,
+    database: 'pwapi',
+    user: 'postgres',
+    password: ''
+};
+const db = pgp(connection);
 
 // Public
 app.use(express.static('public'));
@@ -13,7 +23,7 @@ var data = {};
 data.hello = "world";
 
 // App
-const app = express();
+
 app.get('/', function (req, res) {
   res.json(data);
 });
