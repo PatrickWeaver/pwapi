@@ -38,10 +38,6 @@ function getData(request, response, callback) {
 // Public
 app.use(express.static('public'));
 
-// Data
-var data = {};
-data.hello = "world";
-
 function resJSON(request, response, data) {
   response.json(data);
 }
@@ -50,9 +46,6 @@ function resJSON(request, response, data) {
 app.get('/', function (req, res) {
   getData(req, res, resJSON);
 });
-
-
-
 
 app.listen(port);
 console.log('Running on http://localhost:' + port);
