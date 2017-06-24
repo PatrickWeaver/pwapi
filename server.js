@@ -1,22 +1,15 @@
 'use strict';
 
 const express = require("express");
-//const pgp = require('pg-promise')();
 const http = require("http");
 const https = require("https");
 
+const knex = require("./db/knex");
+
 const port = 8000;
 const app = express();
-/*
-const connection = {
-    host: "localhost",
-    port: 5432,
-    database: "pwapi",
-    user: "postgres",
-    password: ""
-};
-const db = pgp(connection);
-*/
+
+
 
 function getData(request, response, callback) {
 
@@ -44,7 +37,20 @@ function resJSON(request, response, data) {
 
 // App
 app.get('/', function (req, res) {
-  getData(req, res, resJSON);
+  //getData(req, res, resJSON);
+  knex("posts").select("*")
+  .then((posts) => {
+    res.status(200).json({
+      status: "success",
+      data: posts
+    });
+  })
+  .catch((err) => {
+    res.status(500).json({
+      status: "error",
+      data: err
+    });
+  });
 });
 
 app.listen(port);
