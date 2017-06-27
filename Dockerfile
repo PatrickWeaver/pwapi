@@ -1,12 +1,12 @@
-FROM node:boron
+FROM python:3
 
 RUN mkdir -p /usr/src/app
 WORKDIR /usr/src/app
 
-COPY package.json /usr/src/app/
-RUN npm install
-
 COPY . /usr/src/app
+RUN pip install -r requirements.txt
 
-EXPOSE 8000
-CMD ["npm", "start"]
+EXPOSE 5000
+
+ENTRYPOINT ["python"]
+CMD ["app.py"]
