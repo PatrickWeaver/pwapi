@@ -9,6 +9,7 @@ logs
 *.pyo
 env
 env*
+.env
 dist
 build
 *.egg

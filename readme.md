@@ -1,7 +1,7 @@
 # PW API
 
-Version: 0.0.7
+Version: 0.0.8
 
 Python 3.6
 
-Flask 0.12
+Django 1.11.2
