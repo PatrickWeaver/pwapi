@@ -17,10 +17,10 @@ class Migration(migrations.Migration):
             name='Post',
             fields=[
                 ('id', models.AutoField(auto_created=True, primary_key=True, serialize=False, verbose_name='ID')),
-                ('post_title', models.CharField(max_length=255)),
+                ('post_title', models.CharField(max_length=1024)),
                 ('post_body', models.TextField()),
-                ('post_date', models.DateField()),
-                ('created_date', models.DateField()),
+                ('post_date', models.DateTimeField()),
+                ('created_date', models.DateTimeField()),
             ],
         ),
     ]
