@@ -30,7 +30,7 @@ else:
     # SECURITY WARNING: don't run with debug turned on in production!
     DEBUG = True
 
-ALLOWED_HOSTS = []
+ALLOWED_HOSTS = ['127.0.0.1', 'localhost', '172.18.0.3', os.environ.get('IP'),]
 
 
 # Application definition
