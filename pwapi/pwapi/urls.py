@@ -15,12 +15,15 @@ Including another URLconf
 """
 from django.conf.urls import url
 from django.contrib import admin
+from django.views.decorators.csrf import csrf_exempt
 from pwapi import views
 from blog import views as blog_views
 
+
 urlpatterns = [
     url(r'^admin/', admin.site.urls),
-    url(r'^posts', blog_views.posts, name='posts'),
+    url(r'^blog/posts/new', csrf_exempt(blog_views.new_post), name='new_post'),
+    url(r'^blog/posts', blog_views.posts, name='posts'),
     url(r'', views.index, name='index'),
 
 ]

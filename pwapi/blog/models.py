@@ -9,7 +9,7 @@ class Post(models.Model):
     # Implement better datetime with timezones:
     # import pytz
     # from datetime import datetime
-    # datetime.utcnow().replace(tzinfo=pytz.utc)'''
+    # datetime.utcnow().replace(tzinfo=pytz.utc)
 
     def __str__(self):
         return u'{%s: %s}' % (self.post_title, self.post_body)
