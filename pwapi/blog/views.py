@@ -26,10 +26,17 @@ def posts(request):
         page = 1
     end_page = page * 5
     start_page = end_page - 5
-    posts = Post.objects.all().order_by("post_date")[start_page:end_page].values("post_title", "post_body", "post_date")
+    all_posts = Post.objects.all()
+    number_of_posts = all_posts.count();
+    posts = all_posts.order_by("-post_date")[start_page:end_page].values("post_title", "post_body", "post_date")
     posts_list = list(posts)
+    posts_response = {
+        "total_posts": number_of_posts,
+        "page": page,
+        "posts_list": posts_list,
+    }
     # on safe=False: https://stackoverflow.com/questions/28740338/creating-json-array-in-django
-    return JsonResponse(posts_list, safe=False)
+    return JsonResponse(posts_response, safe=False)
 
 def new_post(request):
     # Start by assming there won't be a error with the request.
