@@ -19,7 +19,14 @@ errorJSON = [{"Error": "No data for that request."}]
 # This function returns all of the posts in the API.
 # At some point this might require pagination
 def posts(request):
-    posts = Post.objects.all().values("post_title", "post_body", "post_date")
+    # 🚸 Need to make sure incorrect parameters don't crash api server
+    # This is for pagination on the blog, should try to make this more general so I can use it elsewhere.
+    page = int(bleach.clean(request.GET.get("page", 1)))
+    if type(page) != int:
+        page = 1
+    end_page = page * 5
+    start_page = end_page - 5
+    posts = Post.objects.all().order_by("post_date")[start_page:end_page].values("post_title", "post_body", "post_date")
     posts_list = list(posts)
     # on safe=False: https://stackoverflow.com/questions/28740338/creating-json-array-in-django
     return JsonResponse(posts_list, safe=False)
