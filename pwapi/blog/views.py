@@ -34,7 +34,11 @@ def new_post(request):
             # Might be better to set these defaults for post_title and post_date in the model?
             post_title = bleach.clean(request.POST.get("post_title", ""))
             post_body = bleach.clean(request.POST["post_body"])
+            #🚸 Find a way to check if it's a date.
+
             post_date = bleach.clean(request.POST.get("post_date", datetime.now()))
+            if len(post_date) < 2:
+                post_date = datetime.now()
             # Might also want to set this as default in the model
             created_date = datetime.now()
             post = Post(post_title = post_title, post_body = post_body, post_date = post_date, created_date = created_date)
@@ -48,8 +52,9 @@ def new_post(request):
             return JsonResponse(post_list, safe=False)
 
         else:
-            error = True
+            return JsonResponse("NO POST_BODY", safe=False)
     else:
-        error = True
+        return JsonResponse(("NOT POST, was: " + request.method), safe=False)
+        #error = True
     if error == True:
         return JsonResponse(errorJSON, safe=False)
