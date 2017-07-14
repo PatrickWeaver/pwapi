@@ -11,6 +11,12 @@ import json
 # bleach is used to sanatize request input
 # https://pypi.python.org/pypi/bleach
 import bleach
+# BeautifulSoup4 is used to get plaintext from HTML (via Markdown)
+# https://www.crummy.com/software/BeautifulSoup/bs4/doc/
+from bs4 import BeautifulSoup
+# Markdown is used to parse markdown to HTML to send to Beautiful Soup.
+# https://pypi.python.org/pypi/Markdown
+from markdown import markdown
 
 # General error message for invalid requests:
 errorJSON = [{"Error": "No data for that request."}]
@@ -30,6 +36,12 @@ def posts(request):
     number_of_posts = all_posts.count();
     posts = all_posts.order_by("-post_date")[start_page:end_page].values("post_title", "post_body", "post_date")
     posts_list = list(posts)
+    for post in posts_list:
+        html_post_body = markdown(post["post_body"])
+        post["html_post_body"] = html_post_body
+        plaintext_post_body = bleach.clean(''.join(BeautifulSoup(html_post_body).findAll(text=True)))
+        post["plaintext_post_body"] = plaintext_post_body
+        post["post_preview"] = plaintext_post_body[0:139] + " . . ."
     posts_response = {
         "total_posts": number_of_posts,
         "page": page,
@@ -48,14 +60,14 @@ def new_post(request):
             # Might be better to set these defaults for post_title and post_date in the model?
             post_title = bleach.clean(request.POST.get("post_title", ""))
             post_body = bleach.clean(request.POST["post_body"])
-            #🚸 Find a way to check if it's a date.
 
+            #🚸 Find a way to check if it's a date.
             post_date = bleach.clean(request.POST.get("post_date", datetime.now()))
             if len(post_date) < 2:
                 post_date = datetime.now()
             # Might also want to set this as default in the model
             created_date = datetime.now()
-            post = Post(post_title = post_title, post_body = post_body, post_date = post_date, created_date = created_date)
+            post = Post(post_title = post_title, plaintext_post_body = plaintext_post_body, post_date = post_date, created_date = created_date)
             post.save()
             post_list = [{
                 "post_title": post_title,

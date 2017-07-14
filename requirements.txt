@@ -3,3 +3,5 @@ gunicorn>=19.7
 psycopg2==2.7.1
 bleach>=2.0.0
 django-cors-headers>=2.1.0
+BeautifulSoup4>=4.4.0
+markdown>=2.6.8
