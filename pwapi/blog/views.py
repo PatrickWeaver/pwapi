@@ -35,20 +35,45 @@ def posts(request):
     all_posts = Post.objects.all()
     number_of_posts = all_posts.count();
     posts = all_posts.order_by("-post_date")[start_page:end_page].values("post_title", "post_body", "post_date")
+    for post in posts:
+        post = expand_post(post)
     posts_list = list(posts)
-    for post in posts_list:
-        html_post_body = markdown(post["post_body"])
-        post["html_post_body"] = html_post_body
-        plaintext_post_body = bleach.clean(''.join(BeautifulSoup(html_post_body).findAll(text=True)))
-        post["plaintext_post_body"] = plaintext_post_body
-        post["post_preview"] = plaintext_post_body[0:139] + " . . ."
-    posts_response = {
+    response = {
         "total_posts": number_of_posts,
         "page": page,
         "posts_list": posts_list,
     }
     # on safe=False: https://stackoverflow.com/questions/28740338/creating-json-array-in-django
-    return JsonResponse(posts_response, safe=False)
+    return JsonResponse(response, safe=False)
+
+def post(request):
+    print("Path:")
+    print(request.path)
+    print("Path Info:")
+    print(request.path_info)
+    print("GET:")
+    print(request.GET)
+    for i in request.GET:
+        print(i)
+    # 🚸 This will change to slug once that exists
+    title = bleach.clean(request.GET.get("title", ""))
+    print("Title:")
+    print(title)
+    try:
+        post = Post.objects.get(post_title=title)
+        post_dict = {}
+        post_dict["post_title"] = getattr(post, "post_title")
+        post_dict["post_body"] = getattr(post, "post_body")
+        post_dict["post_date"] = getattr(post, "post_date")
+        post_dict = expand_post(post_dict)
+        response = {
+            "posts_list": [post_dict]
+        }
+        return JsonResponse(response, safe=False)
+    except Post.DoesNotExist:
+        print("No post!")
+        return JsonResponse(errorJSON, safe=False)
+
 
 def new_post(request):
     # Start by assming there won't be a error with the request.
@@ -84,3 +109,15 @@ def new_post(request):
         #error = True
     if error == True:
         return JsonResponse(errorJSON, safe=False)
+
+
+def expand_post(post):
+    # setattr(x, 'foobar', 123)
+    print(type(post))
+    # getattr(x, 'foobar')
+    html_post_body = markdown(post["post_body"])
+    post["html_post_body"] = html_post_body
+    plaintext_post_body = bleach.clean(''.join(BeautifulSoup(html_post_body).findAll(text=True)))
+    post["plaintext_post_body"] = plaintext_post_body
+    post["post_preview"] = plaintext_post_body[0:139] + " . . ."
+    return post

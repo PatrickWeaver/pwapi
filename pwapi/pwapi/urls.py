@@ -24,6 +24,7 @@ urlpatterns = [
     url(r'^admin/', admin.site.urls),
     url(r'^blog/posts/new', csrf_exempt(blog_views.new_post), name='new_post'),
     url(r'^blog/posts', blog_views.posts, name='posts'),
+    url(r'^blog/post', blog_views.post, name='post'),
     url(r'', views.index, name='index'),
 
 ]
