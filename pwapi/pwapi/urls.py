@@ -18,6 +18,7 @@ from django.contrib import admin
 from django.views.decorators.csrf import csrf_exempt
 from pwapi import views
 from blog import views as blog_views
+from bot import views as bot_views
 
 
 urlpatterns = [
@@ -25,6 +26,7 @@ urlpatterns = [
     url(r'^blog/posts/new', csrf_exempt(blog_views.new_post), name='new_post'),
     url(r'^blog/posts', blog_views.posts, name='posts'),
     url(r'^blog/post', blog_views.post, name='post'),
+    url(r'^bot/message', bot_views.message, name='message'),
     url(r'', views.index, name='index'),
 
 ]
