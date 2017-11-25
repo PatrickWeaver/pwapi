@@ -35,9 +35,10 @@ allowed_hosts_array = ['127.0.0.1', 'localhost', '172.18.0.3',]
 
 # If more than one env host needs to be passed separate by '*|*'
 env_hosts = os.environ.get('HOSTS');
-env_hosts_array = env_hosts.split("*|*")
-for i in env_hosts_array:
-    allowed_hosts_array.append(i)
+if env_hosts:
+    env_hosts_array = env_hosts.split("*|*")
+    for i in env_hosts_array:
+        allowed_hosts_array.append(i)
 
 ALLOWED_HOSTS = allowed_hosts_array
 

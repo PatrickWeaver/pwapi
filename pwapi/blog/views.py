@@ -27,7 +27,7 @@ errorJSON = [{"Error": "No data for that request."}]
 def posts(request):
     # 🚸 Need to make sure incorrect parameters don't crash api server
     # This is for pagination on the blog, should try to make this more general so I can use it elsewhere.
-    page = int(bleach.clean(request.GET.get("page", 1)))
+    page = int(bleach.clean(request.GET.get("page", "1")))
     if type(page) != int:
         page = 1
     end_page = page * 5
@@ -92,7 +92,7 @@ def new_post(request):
                 post_date = datetime.now()
             # Might also want to set this as default in the model
             created_date = datetime.now()
-            post = Post(post_title = post_title, plaintext_post_body = plaintext_post_body, post_date = post_date, created_date = created_date)
+            post = Post(post_title = post_title, post_body = post_body, post_date = post_date, created_date = created_date)
             post.save()
             post_list = [{
                 "post_title": post_title,
