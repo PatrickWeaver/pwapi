@@ -105,7 +105,22 @@ def new_post(request):
         else:
             return JsonResponse("NO POST_BODY", safe=False)
     else:
-        return JsonResponse(("NOT POST, was: " + request.method), safe=False)
+        instructions = {
+          0: "New post must be submitted as POST request.",
+          1: {
+            "Required Fields:": {
+              0: "post_title: max_length=1024",
+              1: "post_body"
+            },
+            "Optional Fields": {
+              0: "post_date"
+            }
+          }
+
+        }
+
+
+        return JsonResponse(instructions, safe=False)
         #error = True
     if error == True:
         return JsonResponse(errorJSON, safe=False)
@@ -119,5 +134,6 @@ def expand_post(post):
     post["html_post_body"] = html_post_body
     plaintext_post_body = bleach.clean(''.join(BeautifulSoup(html_post_body).findAll(text=True)))
     post["plaintext_post_body"] = plaintext_post_body
-    post["post_preview"] = plaintext_post_body[0:139] + " . . ."
+
+    post["post_preview"] = plaintext_post_body[0:139] + (" . . ." if len(plaintext_post_body) > 140 else "")
     return post
