@@ -130,7 +130,7 @@ def expand_post(post):
     # setattr(x, 'foobar', 123)
     print(type(post))
     # getattr(x, 'foobar')
-    html_post_body = markdown(post["post_body"])
+    html_post_body = markdown(post["post_body"], extensions=["markdown.extensions.extra"])
     post["html_post_body"] = html_post_body
     plaintext_post_body = bleach.clean(''.join(BeautifulSoup(html_post_body).findAll(text=True)))
     post["plaintext_post_body"] = plaintext_post_body
