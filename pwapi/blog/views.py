@@ -34,7 +34,7 @@ def posts(request):
     start_page = end_page - 5
     all_posts = Post.objects.all()
     number_of_posts = all_posts.count();
-    posts = all_posts.order_by("-post_date")[start_page:end_page].values("post_title", "post_body", "post_date")
+    posts = all_posts.order_by("-post_date")[start_page:end_page].values("title", "slug", "body", "post_date")
     for post in posts:
         post = expand_post(post)
     posts_list = list(posts)
@@ -60,10 +60,10 @@ def post(request):
     print("Title:")
     print(title)
     try:
-        post = Post.objects.get(post_title=title)
+        post = Post.objects.get(title=title)
         post_dict = {}
-        post_dict["post_title"] = getattr(post, "post_title")
-        post_dict["post_body"] = getattr(post, "post_body")
+        post_dict["title"] = getattr(post, "title")
+        post_dict["body"] = getattr(post, "body")
         post_dict["post_date"] = getattr(post, "post_date")
         post_dict = expand_post(post_dict)
         response = {
@@ -80,11 +80,11 @@ def new_post(request):
     error = False
     # Only accept POST requests, otherwise send an error
     if request.method == "POST":
-        # Only accept requests with a post_body, other values like post_title and post_date can be blank and have defaults set.
-        if request.POST.get("post_body"):
-            # Might be better to set these defaults for post_title and post_date in the model?
-            post_title = bleach.clean(request.POST.get("post_title", ""))
-            post_body = bleach.clean(request.POST["post_body"])
+        # Only accept requests with a body, other values like title and post_date can be blank and have defaults set.
+        if request.POST.get("body"):
+            # Might be better to set these defaults for title and post_date in the model?
+            title = bleach.clean(request.POST.get("title", ""))
+            body = bleach.clean(request.POST["body"])
 
             #🚸 Find a way to check if it's a date.
             post_date = bleach.clean(request.POST.get("post_date", datetime.now()))
@@ -92,11 +92,11 @@ def new_post(request):
                 post_date = datetime.now()
             # Might also want to set this as default in the model
             created_date = datetime.now()
-            post = Post(post_title = post_title, post_body = post_body, post_date = post_date, created_date = created_date)
+            post = Post(title = title, body = body, post_date = post_date, created_date = created_date)
             post.save()
             post_list = [{
-                "post_title": post_title,
-                "post_body": post_body,
+                "title": title,
+                "body": body,
                 "post_date": post_date,
                 "created_date": created_date
             }]
@@ -109,8 +109,8 @@ def new_post(request):
           0: "New post must be submitted as POST request.",
           1: {
             "Required Fields:": {
-              0: "post_title: max_length=1024",
-              1: "post_body"
+              0: "title: max_length=1024",
+              1: "body"
             },
             "Optional Fields": {
               0: "post_date"
@@ -130,10 +130,10 @@ def expand_post(post):
     # setattr(x, 'foobar', 123)
     print(type(post))
     # getattr(x, 'foobar')
-    html_post_body = markdown(post["post_body"], extensions=["markdown.extensions.extra"])
-    post["html_post_body"] = html_post_body
-    plaintext_post_body = bleach.clean(''.join(BeautifulSoup(html_post_body).findAll(text=True)))
-    post["plaintext_post_body"] = plaintext_post_body
+    html_body = markdown(post["body"], extensions=["markdown.extensions.extra"])
+    post["html_body"] = html_body
+    plaintext_body = bleach.clean(''.join(BeautifulSoup(html_body).findAll(text=True)))
+    post["plaintext_body"] = plaintext_body
 
-    post["post_preview"] = plaintext_post_body[0:139] + (" . . ." if len(plaintext_post_body) > 140 else "")
+    post["post_preview"] = plaintext_body[0:139] + (" . . ." if len(plaintext_body) > 140 else "")
     return post
