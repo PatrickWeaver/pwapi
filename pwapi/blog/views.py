@@ -81,29 +81,40 @@ def new_post(request):
     # Only accept POST requests, otherwise send an error
     if request.method == "POST":
         # Only accept requests with a body, other values like title and post_date can be blank and have defaults set.
-        if request.POST.get("body"):
-            # Might be better to set these defaults for title and post_date in the model?
-            title = bleach.clean(request.POST.get("title", ""))
-            body = bleach.clean(request.POST["body"])
+        if request.body:
+            jsonData = json.loads(request.body)
+            if jsonData["body"]:
+                # Might be better to set these defaults for title and post_date in the model?
+                title = ""
+                slug = ""
+                if jsonData["title"]:
+                    title = bleach.clean(jsonData["title"])
+                if jsonData["slug"]:
+                    slug = bleach.clean(jsonData["slug"])
+                body = bleach.clean(jsonData["body"])
 
-            #🚸 Find a way to check if it's a date.
-            post_date = bleach.clean(request.POST.get("post_date", datetime.now()))
-            if len(post_date) < 2:
+                #🚸 Find a way to check if it's a date.
                 post_date = datetime.now()
-            # Might also want to set this as default in the model
-            created_date = datetime.now()
-            post = Post(title = title, body = body, post_date = post_date, created_date = created_date)
-            post.save()
-            post_list = [{
-                "title": title,
-                "body": body,
-                "post_date": post_date,
-                "created_date": created_date
-            }]
-            return JsonResponse(post_list, safe=False)
+                if jsonData["post_date"] and len(jsonData["post_date"]) > 2:
+                    post_date = bleach.clean(jsonData["post_date"])
+                # Might also want to set this as default in the model
+                created_date = datetime.now()
+                post = Post(title = title, body = body, post_date = post_date, created_date = created_date)
+                post.save()
+                post_list = [{
+                    "title": title,
+                    "slug": slug,
+                    "body": body,
+                    "post_date": post_date,
+                    "created_date": created_date
+                }]
+                return JsonResponse(post_list, safe=False)
 
+            else:
+                return JsonResponse("Error: No Body", status=400, safe=False)
         else:
-            return JsonResponse("NO POST_BODY", safe=False)
+            error = True
+            errorJSON = {"Error": "No Data"}
     else:
         instructions = {
           0: "New post must be submitted as POST request.",
