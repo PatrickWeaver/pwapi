@@ -47,21 +47,13 @@ def posts(request):
     return JsonResponse(response, safe=False)
 
 def post(request):
-    print("Path:")
-    print(request.path)
-    print("Path Info:")
-    print(request.path_info)
-    print("GET:")
-    print(request.GET)
-    for i in request.GET:
-        print(i)
     # 🚸 This will change to slug once that exists
-    title = bleach.clean(request.GET.get("title", ""))
-    print("Title:")
-    print(title)
+    slug = bleach.clean(request.GET.get("slug", ""))
+
     try:
-        post = Post.objects.get(title=title)
+        post = Post.objects.get(slug=slug)
         post_dict = {}
+        post_dict["slug"] = getattr(post, "slug")
         post_dict["title"] = getattr(post, "title")
         post_dict["body"] = getattr(post, "body")
         post_dict["post_date"] = getattr(post, "post_date")
