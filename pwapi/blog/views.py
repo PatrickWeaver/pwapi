@@ -49,6 +49,12 @@ def posts(request):
 def post(request):
     # 🚸 This will change to slug once that exists
     slug = bleach.clean(request.GET.get("slug", ""))
+    print("***")
+    print(slug)
+    print("***")
+    print(request.GET.get("slug", ""))
+    print("***")
+
 
     try:
         post = Post.objects.get(slug=slug)
