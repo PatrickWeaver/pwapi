@@ -35,27 +35,25 @@ def posts(request):
     all_posts = Post.objects.all()
     number_of_posts = all_posts.count();
     posts = all_posts.order_by("-post_date")[start_page:end_page].values("title", "slug", "body", "post_date")
+    index_posts_list = []
     for post in posts:
-        post = expand_post(post)
-    posts_list = list(posts)
+        index_post = {
+            "title": post["title"],
+            "slug": post["slug"],
+            "post_date": post["post_date"]
+        }
+        index_post = preview_post(index_post, post)
+        index_posts_list.append(index_post)
     response = {
         "total_posts": number_of_posts,
         "page": page,
-        "posts_list": posts_list,
+        "posts_list": index_posts_list,
     }
     # on safe=False: https://stackoverflow.com/questions/28740338/creating-json-array-in-django
     return JsonResponse(response, safe=False)
 
 def post(request):
-    # 🚸 This will change to slug once that exists
     slug = bleach.clean(request.GET.get("slug", ""))
-    print("***")
-    print(slug)
-    print("***")
-    print(request.GET.get("slug", ""))
-    print("***")
-
-
     try:
         post = Post.objects.get(slug=slug)
         post_dict = {}
@@ -97,7 +95,13 @@ def new_post(request):
                     post_date = bleach.clean(jsonData["post_date"])
                 # Might also want to set this as default in the model
                 created_date = datetime.now()
-                post = Post(title = title, body = body, post_date = post_date, created_date = created_date)
+                post = Post(
+                    title = title,
+                    slug = slug,
+                    body = body,
+                    post_date = post_date,
+                    created_date = created_date
+                )
                 post.save()
                 post_list = [{
                     "title": title,
@@ -128,21 +132,28 @@ def new_post(request):
 
         }
 
-
         return JsonResponse(instructions, safe=False)
         #error = True
     if error == True:
         return JsonResponse(errorJSON, safe=False)
 
+def get_plaintext(markdown_text):
+    return bleach.clean(''.join(BeautifulSoup(markdown_text).findAll(text=True)))
 
 def expand_post(post):
-    # setattr(x, 'foobar', 123)
-    print(type(post))
-    # getattr(x, 'foobar')
     html_body = markdown(post["body"], extensions=["markdown.extensions.extra"])
     post["html_body"] = html_body
-    plaintext_body = bleach.clean(''.join(BeautifulSoup(html_body).findAll(text=True)))
+    plaintext_body = get_plaintext(html_body)
     post["plaintext_body"] = plaintext_body
-
-    post["post_preview"] = plaintext_body[0:139] + (" . . ." if len(plaintext_body) > 140 else "")
     return post
+
+def preview_post(index_post, post):
+    html_body = markdown(post["body"], extensions=["markdown.extensions.extra"])
+    plaintext_body = get_plaintext(html_body)
+    full_post = False
+    if len(plaintext_body) <= 280:
+        full_post = True
+    index_post["full_post_in_preview"] = full_post
+    index_post["post_preview"] = plaintext_body[0:279] + (" . . ." if not full_post else "")
+    # Try to figure out how to get a markdown preview also
+    return index_post

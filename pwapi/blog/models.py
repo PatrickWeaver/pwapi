@@ -1,12 +1,7 @@
 from django.db import models
 
 def create_slug(title, slug, post_date):
-    print("CREATE SLUG")
-    print("Current Slug:")
-    print(slug)
     if slug == "":
-        print(title)
-        print(title.replace(' ', '-').lower())
         slug = title.replace(' ', '-').lower()
     return slug
 
