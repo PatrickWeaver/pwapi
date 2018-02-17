@@ -28,13 +28,14 @@ def posts(request):
     # 🚸 Need to make sure incorrect parameters don't crash api server
     # This is for pagination on the blog, should try to make this more general so I can use it elsewhere.
     page = int(bleach.clean(request.GET.get("page", "1")))
+    quantity = int(bleach.clean(request.GET.get("quantity", "5")))
     if type(page) != int:
         page = 1
-    end_page = page * 5
-    start_page = end_page - 5
+    end_of_page = page * quantity
+    start_of_page = end_of_page - quantity
     all_posts = Post.objects.all()
     number_of_posts = all_posts.count();
-    posts = all_posts.order_by("-post_date")[start_page:end_page].values("title", "slug", "summary", "body", "post_date")
+    posts = all_posts.order_by("-post_date")[start_of_page:end_of_page].values("title", "slug", "summary", "body", "post_date")
     index_posts_list = []
     for post in posts:
         index_post = {
