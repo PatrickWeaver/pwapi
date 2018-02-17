@@ -1,4 +1,5 @@
 from django.db import models
+from datetime import datetime
 
 def create_slug(title, slug, post_date):
     if slug == "":
@@ -8,11 +9,12 @@ def create_slug(title, slug, post_date):
 
 
 class Post(models.Model):
-    title = models.CharField(max_length=1024)
+    title = models.CharField(max_length=1024, default="")
     slug = models.CharField(max_length=1024, unique=True)
+    summary = models.TextField(default="")
     body = models.TextField()
     post_date = models.DateTimeField()
-    created_date = models.DateTimeField()
+    created_date = models.DateTimeField(default=datetime.now)
 
     # Implement better datetime with timezones:
     # import pytz

@@ -34,20 +34,21 @@ def posts(request):
     start_page = end_page - 5
     all_posts = Post.objects.all()
     number_of_posts = all_posts.count();
-    posts = all_posts.order_by("-post_date")[start_page:end_page].values("title", "slug", "body", "post_date")
+    posts = all_posts.order_by("-post_date")[start_page:end_page].values("title", "slug", "summary", "body", "post_date")
     index_posts_list = []
     for post in posts:
         index_post = {
-            "title": post["title"],
-            "slug": post["slug"],
-            "post_date": post["post_date"]
+            "title":        post["title"],
+            "slug":         post["slug"],
+            "summary":      post["summary"],
+            "post_date":    post["post_date"]
         }
         index_post = preview_post(index_post, post)
         index_posts_list.append(index_post)
     response = {
-        "total_posts": number_of_posts,
-        "page": page,
-        "posts_list": index_posts_list,
+        "total_posts":  number_of_posts,
+        "page":         page,
+        "posts_list":   index_posts_list,
     }
     # on safe=False: https://stackoverflow.com/questions/28740338/creating-json-array-in-django
     return JsonResponse(response, safe=False)
@@ -59,6 +60,7 @@ def post(request):
         post_dict = {}
         post_dict["slug"] = getattr(post, "slug")
         post_dict["title"] = getattr(post, "title")
+        post_dict["summary"] = getattr(post, "summary")
         post_dict["body"] = getattr(post, "body")
         post_dict["post_date"] = getattr(post, "post_date")
         post_dict = expand_post(post_dict)
