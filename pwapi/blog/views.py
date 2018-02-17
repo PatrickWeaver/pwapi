@@ -43,7 +43,7 @@ def posts(request):
             "summary":      post["summary"],
             "post_date":    post["post_date"]
         }
-        index_post = preview_post(index_post, post)
+        index_post = {**index_post, **preview_post(post)}
         index_posts_list.append(index_post)
     response = {
         "total_posts":  number_of_posts,
@@ -149,13 +149,15 @@ def expand_post(post):
     post["plaintext_body"] = plaintext_body
     return post
 
-def preview_post(index_post, post):
+def preview_post(post):
     html_body = markdown(post["body"], extensions=["markdown.extensions.extra"])
     plaintext_body = get_plaintext(html_body)
     full_post = False
     if len(plaintext_body) <= 280:
         full_post = True
-    index_post["full_post_in_preview"] = full_post
-    index_post["post_preview"] = plaintext_body[0:279] + (" . . ." if not full_post else "")
+    index_post = {
+        "full_post_in_preview": full_post,
+        "post_preview": plaintext_body[0:279] + (" . . ." if not full_post else "")
+    }
     # Try to figure out how to get a markdown preview also
     return index_post
