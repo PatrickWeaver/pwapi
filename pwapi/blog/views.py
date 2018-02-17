@@ -86,32 +86,34 @@ def new_post(request):
                 # Might be better to set these defaults for title and post_date in the model?
                 title = ""
                 slug = ""
+                summary = ""
                 if jsonData["title"]:
                     title = bleach.clean(jsonData["title"])
                 if jsonData["slug"]:
                     slug = bleach.clean(jsonData["slug"])
+                if jsonData["summary"]:
+                    summary = bleach.clean(jsonData["summary"])
                 body = bleach.clean(jsonData["body"])
 
                 #🚸 Find a way to check if it's a date.
                 post_date = datetime.now()
                 if jsonData["post_date"] and len(jsonData["post_date"]) > 2:
                     post_date = bleach.clean(jsonData["post_date"])
-                # Might also want to set this as default in the model
-                created_date = datetime.now()
                 post = Post(
                     title = title,
                     slug = slug,
+                    summary = summary,
                     body = body,
-                    post_date = post_date,
-                    created_date = created_date
+                    post_date = post_date
                 )
                 post.save()
                 post_list = [{
+                    "success": True,
                     "title": title,
                     "slug": slug,
+                    "summary": summary,
                     "body": body,
-                    "post_date": post_date,
-                    "created_date": created_date
+                    "post_date": post_date
                 }]
                 return JsonResponse(post_list, safe=False)
 

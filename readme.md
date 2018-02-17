@@ -37,3 +37,12 @@ Django 1.11.2
     p1 = Post(title="First Post", body="This is the first post.\nThere will be more posts later.", post_date=n, created_date=n)
     p1.save()
     ```
+    - New post POST request should return JSON version of:
+    ``` python
+    "success": True,
+    "title": title,
+    "slug": slug,
+    "summary": summary,
+    "body": body,
+    "post_date": post_date
+    ```
