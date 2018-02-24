@@ -34,6 +34,7 @@ def authenticate(request):
                 password = bleach.clean(jsonData["password"])
 
             person_dict = {
+                "id": 1234,
                 "username": username,
                 "name": username,
                 "email": username + "@example.com",
