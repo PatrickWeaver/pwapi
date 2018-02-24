@@ -1,11 +1,14 @@
 from django.shortcuts import render
 from django.http import HttpRequest, HttpResponse, JsonResponse
 from people.models import Person
+import bleach
 
 #from django.forms.models import model_to_dict
 
 # https://docs.python.org/3/library/json.html
 import json
+
+errorJSON = [{"Error": "No data for that request."}]
 
 def people(request):
     people = Person.objects.all()
@@ -21,14 +24,39 @@ def people(request):
     return JsonResponse(people_list, safe=False)
 
 def authenticate(request):
-    #username = bleach.clean(request.GET.get("username", ""))
-    #password = bleach.clean(request.Get.get("password", ""))
+    error = False
+    if request.method == "POST":
+        if request.body:
+            jsonData = json.loads(request.body)
+            if jsonData["username"]:
+                username = bleach.clean(jsonData["username"])
+            if jsonData["password"]:
+                password = bleach.clean(jsonData["password"])
 
-    person_dict = {
-        "username": "pw-test",
-        "name": "Patrick Weaver (test)",
-        "email": "pjpweaver@gmail.com-test",
-        "api_key": "abc_123"
-    }
+            person_dict = {
+                "username": username,
+                "name": username,
+                "email": username + "@example.com",
+                "api_key": "abc_123"
+            }
+        else:
+            error = True
 
-    return JsonResponse(person_dict, safe=False)
+        return JsonResponse(person_dict, safe=False)
+    else:
+        instructions = {
+          0: "New post must be submitted as POST request.",
+          1: {
+            "Required Fields:": {
+              0: "username",
+              1: "password"
+            }
+          }
+
+        }
+
+        return JsonResponse(instructions, safe=False)
+
+    #error = True
+    if error == True:
+        return JsonResponse(errorJSON, safe=False)

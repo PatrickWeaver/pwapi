@@ -38,7 +38,7 @@ urlpatterns = [
 
     # People:
     url(r'^people/$', people_views.people, name='people'),
-    url(r'^people/authenticate/$', people_views.authenticate, name='authenticate'),
+    url(r'^people/authenticate/$', csrf_exempt(people_views.authenticate), name='authenticate'),
 
     # Root:
     url(r'^$', views.index, name='index'),

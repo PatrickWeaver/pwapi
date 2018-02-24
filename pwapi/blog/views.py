@@ -11,6 +11,7 @@ import json
 # bleach is used to sanatize request input
 # https://pypi.python.org/pypi/bleach
 import bleach
+# Allow iframe tags and attributes for YouTube videos:
 bleach.sanitizer.ALLOWED_TAGS.append(u"iframe")
 bleach.sanitizer.ALLOWED_ATTRIBUTES[u"iframe"] = [u"width", u"height", u"src", u"frameborder", u"allow", u"allowfullscreen"]
 # BeautifulSoup4 is used to get plaintext from HTML (via Markdown)
