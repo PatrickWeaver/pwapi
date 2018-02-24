@@ -146,3 +146,6 @@ STATIC_URL = '/static/'
 # cors middleware:
 # https://pypi.python.org/pypi/django-cors-headers/2.1.0
 CORS_ORIGIN_ALLOW_ALL = True
+
+# https://docs.djangoproject.com/en/dev/ref/settings/#append-slash
+APPEND_SLASH = True

@@ -26,19 +26,20 @@ urlpatterns = [
     url(r'^admin/', admin.site.urls),
 
     # Blog:
-    url(r'^blog/posts/new', csrf_exempt(blog_views.new_post), name='new_post'),
-    url(r'^blog/posts', blog_views.posts, name='posts'),
-    url(r'^blog/post', blog_views.post, name='post'),
+    url(r'^blog/posts/new/$', csrf_exempt(blog_views.new_post), name='new_post'),
+    url(r'^blog/posts/$', blog_views.posts, name='posts'),
+    url(r'^blog/post/$', blog_views.post, name='post'),
 
     # Bot:
-    url(r'^bot/conversation/([a-zA-Z0-9]+)', bot_views.conversation, name='conversation'),
-    url(r'^bot/guest/([a-zA-Z0-9]+)', bot_views.guest, name='guest'),
-    url(r'^bot/message', bot_views.message, name='message'),
+    url(r'^bot/conversation/([a-zA-Z0-9]+)/$', bot_views.conversation, name='conversation'),
+    url(r'^bot/guest/([a-zA-Z0-9]+)/$', bot_views.guest, name='guest'),
+    url(r'^bot/message/$', bot_views.message, name='message'),
 
 
     # People:
-    url(r'^people', people_views.people, name='people'),
+    url(r'^people/$', people_views.people, name='people'),
+    url(r'^people/authenticate/$', people_views.authenticate, name='authenticate'),
 
-    # Catchall:
-    url(r'', views.index, name='index'),
+    # Root:
+    url(r'^$', views.index, name='index'),
 ]

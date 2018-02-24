@@ -19,3 +19,16 @@ def people(request):
         people_list.append(person_dict)
     print(people_list)
     return JsonResponse(people_list, safe=False)
+
+def authenticate(request):
+    #username = bleach.clean(request.GET.get("username", ""))
+    #password = bleach.clean(request.Get.get("password", ""))
+
+    person_dict = {
+        "username": "pw-test",
+        "name": "Patrick Weaver (test)",
+        "email": "pjpweaver@gmail.com-test",
+        "api_key": "abc_123"
+    }
+
+    return JsonResponse(person_dict, safe=False)
