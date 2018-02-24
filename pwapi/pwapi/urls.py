@@ -19,7 +19,7 @@ from django.views.decorators.csrf import csrf_exempt
 from pwapi import views
 from blog import views as blog_views
 from bot import views as bot_views
-from users import views as users_views
+from people import views as people_views
 
 
 urlpatterns = [
@@ -36,8 +36,8 @@ urlpatterns = [
     url(r'^bot/message', bot_views.message, name='message'),
 
 
-    # Users:
-    url(r'^users/users', users_views.users, name='users'),
+    # People:
+    url(r'^people', people_views.people, name='people'),
 
     # Catchall:
     url(r'', views.index, name='index'),

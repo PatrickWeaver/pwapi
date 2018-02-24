@@ -47,7 +47,7 @@ ALLOWED_HOSTS = allowed_hosts_array
 
 INSTALLED_APPS = [
     'blog.apps.BlogConfig',
-    'users.apps.UsersConfig',
+    'people.apps.PeopleConfig',
     'django.contrib.admin',
     'django.contrib.auth',
     'django.contrib.contenttypes',
