@@ -60,7 +60,7 @@ def posts(request):
 def post(request):
     slug = bleach.clean(request.GET.get("slug", ""))
     try:
-        post = Post.objects.get(slug=slug)
+        post = Post.objects.filter(slug=slug)[0]
         post_dict = {}
         post_dict["slug"] = getattr(post, "slug")
         post_dict["title"] = getattr(post, "title")

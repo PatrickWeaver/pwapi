@@ -16,6 +16,7 @@ def people(request):
     for i in people:
         person_dict = {}
         person_dict["username"] = getattr(i, "username")
+        person_dict["password"] = getattr(i, "password")
         person_dict["name"] = getattr(i, "name")
         person_dict["email"] = getattr(i, "email")
         person_dict["api_key"] = getattr(i, "api_key")
@@ -25,39 +26,35 @@ def people(request):
 
 def authenticate(request):
     error = False
+    print(request.body)
     if request.method == "POST":
         if request.body:
             jsonData = json.loads(request.body)
-            if jsonData["username"]:
+            if jsonData["username"] and jsonData["password"]:
                 username = bleach.clean(jsonData["username"])
-            if jsonData["password"]:
                 password = bleach.clean(jsonData["password"])
+                person = Person.objects.filter(username=username)[0]
+                if person.password == password:
 
-            person_dict = {
-                "id": 1234,
-                "username": username,
-                "name": username,
-                "email": username + "@example.com",
-                "api_key": "abc_123"
-            }
-        else:
-            error = True
+                    person_dict = {
+                        "id": person.id,
+                        "username": person.username,
+                        "name": person.name,
+                        "email": person.email,
+                        "api_key": person.api_key
+                    }
+                    return JsonResponse(person_dict, safe=False)
+                else:
+                    return JsonResponse({"Error": "Invalid Login"}, safe=False)
 
-        return JsonResponse(person_dict, safe=False)
-    else:
-        instructions = {
-          0: "New post must be submitted as POST request.",
-          1: {
-            "Required Fields:": {
-              0: "username",
-              1: "password"
-            }
-          }
-
+    instructions = {
+      0: "New post must be submitted as POST request with a json body.",
+      1: {
+        "Required Fields:": {
+          0: "username",
+          1: "password"
         }
+      }
 
-        return JsonResponse(instructions, safe=False)
-
-    #error = True
-    if error == True:
-        return JsonResponse(errorJSON, safe=False)
+    }
+    return JsonResponse(instructions, safe=False)
