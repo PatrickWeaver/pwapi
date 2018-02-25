@@ -32,7 +32,7 @@ def authenticate(request):
             jsonData = json.loads(request.body)
             if jsonData["username"] and jsonData["password"]:
                 username = bleach.clean(jsonData["username"])
-                password = bleach.clean(jsonData["password"])
+                password = jsonData["password"]
                 person = Person.objects.filter(username=username)[0]
                 if person.password == password:
 
@@ -41,7 +41,8 @@ def authenticate(request):
                         "username": person.username,
                         "name": person.name,
                         "email": person.email,
-                        "api_key": person.api_key
+                        "api_key": person.api_key,
+                        "type": "admin"
                     }
                     return JsonResponse(person_dict, safe=False)
                 else:
