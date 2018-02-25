@@ -16,30 +16,33 @@ Including another URLconf
 from django.conf.urls import url
 from django.contrib import admin
 from django.views.decorators.csrf import csrf_exempt
-from pwapi import views
+from pwapi import views as pwapi_views
 from blog import views as blog_views
 from bot import views as bot_views
 from people import views as people_views
 
 
 urlpatterns = [
+    # Version 1:
+    url(r'^v1/$', pwapi_views.v1, name='v1'),
+
     url(r'^admin/', admin.site.urls),
 
     # Blog:
-    url(r'^blog/posts/new/$', csrf_exempt(blog_views.new_post), name='new_post'),
-    url(r'^blog/posts/$', blog_views.posts, name='posts'),
-    url(r'^blog/post/$', blog_views.post, name='post'),
+    url(r'^v1/blog/posts/new/$', csrf_exempt(blog_views.new_post), name='new_post'),
+    url(r'^v1/blog/posts/$', blog_views.posts, name='posts'),
+    url(r'^v1/blog/post/$', blog_views.post, name='post'),
 
     # Bot:
-    url(r'^bot/conversation/([a-zA-Z0-9]+)/$', bot_views.conversation, name='conversation'),
-    url(r'^bot/guest/([a-zA-Z0-9]+)/$', bot_views.guest, name='guest'),
-    url(r'^bot/message/$', bot_views.message, name='message'),
+    url(r'^v1/bot/conversation/([a-zA-Z0-9]+)/$', bot_views.conversation, name='conversation'),
+    url(r'^v1/bot/guest/([a-zA-Z0-9]+)/$', bot_views.guest, name='guest'),
+    url(r'^v1/bot/message/$', bot_views.message, name='message'),
 
 
     # People:
-    url(r'^people/$', people_views.people, name='people'),
-    url(r'^people/authenticate/$', csrf_exempt(people_views.authenticate), name='authenticate'),
+    url(r'^v1/people/$', people_views.people, name='people'),
+    url(r'^v1/people/authenticate/$', csrf_exempt(people_views.authenticate), name='authenticate'),
 
     # Root:
-    url(r'^$', views.index, name='index'),
+    url(r'^$', pwapi_views.index, name='index'),
 ]

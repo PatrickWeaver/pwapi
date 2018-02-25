@@ -1,4 +1,9 @@
 from django.http import HttpResponse
 
+header = "<h1>PW API</h1>"
+
 def index(request):
-    return HttpResponse("PW API")
+    return HttpResponse(header + "<a href='/v1/'>v1</a>")
+
+def v1(request):
+    return HttpResponse(header + "<h2>Version 1:</h2><a href='blog/posts/'>Blog Posts</a>")
