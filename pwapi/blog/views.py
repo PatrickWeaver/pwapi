@@ -2,7 +2,7 @@ from django.shortcuts import render
 from django.http import HttpRequest, HttpResponse, JsonResponse
 from django.forms.models import model_to_dict
 from blog.models import Post
-from people.models import Person
+from people.views import check_api_key
 # In case the datetime module is needed it is imported as 'dt'
 # https://docs.python.org/3/library/datetime.html
 import datetime as dt
@@ -59,7 +59,7 @@ def posts(request):
     return JsonResponse(response, safe=False)
 
 def post(request, slug):
-
+    print(request.method + ": " + request.path);
     if request.method == "GET":
         return get_post(request, slug)
     elif request.method == "POST":
@@ -69,120 +69,123 @@ def post(request, slug):
     elif request.method == "DELETE":
         return delete_post(request, slug)
 
-
-
-
 def get_post(request, slug):
     print("get_post " + slug)
-    #slug = bleach.clean(request.GET.get("slug", ""))
-    try:
-        post = Post.objects.filter(slug=slug)[0]
-        post_dict = {}
-        post_dict["slug"] = getattr(post, "slug")
-        post_dict["title"] = getattr(post, "title")
-        post_dict["summary"] = getattr(post, "summary")
-        post_dict["body"] = getattr(post, "body")
-        post_dict["post_date"] = getattr(post, "post_date")
-        post_dict = expand_post(post_dict)
-        response = {
-            "posts_list": [post_dict]
-        }
-        return JsonResponse(response, safe=False)
-    except Post.DoesNotExist:
-        print("No post!")
+    post = find_post_from_slug(slug)
+    post_dict = post_dict_from_post(post)
+    if post_dict == {}:
         return JsonResponse(errorJSON, safe=False)
-
+    else:
+        response = post_dict
+        return JsonResponse(response, safe=False)
 
 def new_post(request, slug):
     print("new_post " + slug)
-    # Start by assming there won't be a error with the request.
-    error = False
-    # Only accept POST requests, otherwise send an error
-    if request.method == "POST":
-        # Only accept requests with a body, other values like title and post_date can be blank and have defaults set.
-        if request.body:
-            jsonData = json.loads(request.body)
-            if "body" in jsonData:
-                api_key = False
-                if "api_key" in jsonData:
-                    api_key = bleach.clean(jsonData["api_key"]);
-                    person_array = Person.objects.filter(api_key=api_key)
-                    if len(person_array) < 1:
-                        error = True
-                    else:
-                        person = person_array[0]
-                        # Eventually here we should check if they are an admin or if they have permissions to post to the blog
-                        if False:
-                        #if not (getattr(person, "type") == "admin"):
-                            error = True
-                        else:
-                            # Might be better to set these defaults for title and post_date in the model?
-                            title = ""
-                            slug = ""
-                            summary = ""
-                            if jsonData["title"]:
-                                title = bleach.clean(jsonData["title"])
-                            if jsonData["slug"]:
-                                slug = bleach.clean(jsonData["slug"])
-                            if jsonData["summary"]:
-                                summary = bleach.clean(jsonData["summary"])
-                            body = bleach.clean(jsonData["body"])
-
-                            #🚸 Find a way to check if it's a date.
-                            post_date = datetime.now()
-                            if jsonData["post_date"] and len(jsonData["post_date"]) > 2:
-                                post_date = bleach.clean(jsonData["post_date"])
-                            post = Post(
-                                title = title,
-                                slug = slug,
-                                summary = summary,
-                                body = body,
-                                post_date = post_date
-                            )
-                            post.save()
-                            post_list = [{
-                                "success": True,
-                                "title": title,
-                                "slug": slug,
-                                "summary": summary,
-                                "body": body,
-                                "post_date": post_date
-                            }]
-                            return JsonResponse(post_list, safe=False)
-                else:
-                    print("NO KEY")
-            else:
-                return JsonResponse("Error: No Body", status=400, safe=False)
-        else:
-            error = True
-            errorJSON = {"Error": "No Data"}
-    else:
-        instructions = {
-          0: "New post must be submitted as POST request.",
-          1: {
-            "Required Fields:": {
-              0: "title: max_length=1024",
-              1: "body"
-            },
-            "Optional Fields": {
-              0: "post_date"
-            }
-          }
-
-        }
-
-        return JsonResponse(instructions, safe=False)
-        #error = True
-    if error == True:
-        errorJSON = "{'error': ''}"
+    post_dict = post_dict_from_request(request)
+    post = post_from_post_dict(post_dict)
+    post_response = response_from_post(post)
+    if not post_response:
         return JsonResponse(errorJSON, safe=False)
+    return JsonResponse(post_response, safe=False)
 
 def edit_post(request, slug):
     print("edit_post " + slug)
+    post = find_post_from_slug(slug)
+    post_dict = post_dict_from_request(request)
+    if not post_dict:
+        return JsonResponse(errorJSON, safe=False)
+    post = update_post_from_dict(post, post_dict)
+    post.save()
+    post_response = response_from_post(post)
+    if not post_response:
+        return JsonResponse(errorJSON, safe=False)
+    return JsonResponse(post_response, safe=False)
+
 
 def delete_post(request, slug):
-    print("delete_post " + slug)
-    pass
+    post = find_post_from_slug(slug)
+    post.delete()
+    return JsonResponse({"success": True})
+
+
+def find_post_from_slug(slug):
+    try:
+        post = Post.objects.filter(slug=slug)[0]
+        return post
+    except Post.DoesNotExist:
+        return False
+
+def post_dict_from_post(post):
+    post_dict = {}
+    post_dict["slug"] = getattr(post, "slug")
+    post_dict["title"] = getattr(post, "title")
+    post_dict["summary"] = getattr(post, "summary")
+    post_dict["body"] = getattr(post, "body")
+    post_dict["post_date"] = getattr(post, "post_date")
+    post_dict = expand_post(post_dict)
+    return post_dict
+
+def post_dict_from_request(request):
+    if not request.body:
+        return False
+    jsonData = json.loads(request.body)
+    if "body" not in jsonData:
+        return False
+    if "api_key" not in jsonData:
+        return False
+    api_key_valid = check_api_key(bleach.clean(jsonData["api_key"]))
+    if not api_key_valid:
+        return False
+    # Might be better to set these defaults for title and post_date in the model?
+    title = ""
+    slug = ""
+    summary = ""
+    if jsonData["title"]:
+        title = bleach.clean(jsonData["title"])
+    if jsonData["slug"]:
+        slug = bleach.clean(jsonData["slug"])
+    if jsonData["summary"]:
+        summary = bleach.clean(jsonData["summary"])
+    body = bleach.clean(jsonData["body"])
+
+    #🚸 Find a way to check if it's a date.
+    post_date = datetime.now()
+    if jsonData["post_date"] and len(jsonData["post_date"]) > 2:
+        post_date = bleach.clean(jsonData["post_date"])
+    post_dict = {
+        "title":      title,
+        "slug":       slug,
+        "summary":    summary,
+        "body":       body,
+        "post_date":  post_date
+    }
+    return post_dict
+
+def post_from_post_dict(post_dict):
+    if not post_dict:
+        return False
+    post = Post(**post_dict)
+    post.save()
+    return post
+
+def response_from_post(post):
+    response = {
+        "success": True,
+        "title": post.title,
+        "slug": post.slug,
+        "summary": post.summary,
+        "body": post.body,
+        "post_date": post.post_date
+    }
+    return response
+
+def update_post_from_dict(post, post_dict):
+    for key, value in post_dict.items():
+        if hasattr(post, key):
+            setattr(post, key, value)
+        else:
+            return False
+    return post
 
 
 def get_plaintext(markdown_text):
