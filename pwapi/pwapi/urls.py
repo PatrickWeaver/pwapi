@@ -29,9 +29,9 @@ urlpatterns = [
     url(r'^admin/', admin.site.urls),
 
     # Blog:
-    url(r'^v1/blog/posts/new/$', csrf_exempt(blog_views.new_post), name='new_post'),
+    #url(r'^v1/blog/posts/new/$', csrf_exempt(blog_views.new_post), name='new_post'),
     url(r'^v1/blog/posts/$', blog_views.posts, name='posts'),
-    url(r'^v1/blog/post/$', blog_views.post, name='post'),
+    url(r'^v1/blog/post/(?P<slug>[\w-]+)/$', csrf_exempt(blog_views.post), name='post'),
 
     # Bot:
     url(r'^v1/bot/conversation/([a-zA-Z0-9]+)/$', bot_views.conversation, name='conversation'),

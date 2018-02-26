@@ -2,6 +2,7 @@ from django.shortcuts import render
 from django.http import HttpRequest, HttpResponse, JsonResponse
 from django.forms.models import model_to_dict
 from blog.models import Post
+from people.models import Person
 # In case the datetime module is needed it is imported as 'dt'
 # https://docs.python.org/3/library/datetime.html
 import datetime as dt
@@ -57,8 +58,23 @@ def posts(request):
     # on safe=False: https://stackoverflow.com/questions/28740338/creating-json-array-in-django
     return JsonResponse(response, safe=False)
 
-def post(request):
-    slug = bleach.clean(request.GET.get("slug", ""))
+def post(request, slug):
+
+    if request.method == "GET":
+        return get_post(request, slug)
+    elif request.method == "POST":
+        return new_post(request, slug)
+    elif request.method == "PUT":
+        return edit_post(request, slug)
+    elif request.method == "DELETE":
+        return delete_post(request, slug)
+
+
+
+
+def get_post(request, slug):
+    print("get_post " + slug)
+    #slug = bleach.clean(request.GET.get("slug", ""))
     try:
         post = Post.objects.filter(slug=slug)[0]
         post_dict = {}
@@ -77,7 +93,8 @@ def post(request):
         return JsonResponse(errorJSON, safe=False)
 
 
-def new_post(request):
+def new_post(request, slug):
+    print("new_post " + slug)
     # Start by assming there won't be a error with the request.
     error = False
     # Only accept POST requests, otherwise send an error
@@ -85,41 +102,55 @@ def new_post(request):
         # Only accept requests with a body, other values like title and post_date can be blank and have defaults set.
         if request.body:
             jsonData = json.loads(request.body)
-            if jsonData["body"]:
-                # Might be better to set these defaults for title and post_date in the model?
-                title = ""
-                slug = ""
-                summary = ""
-                if jsonData["title"]:
-                    title = bleach.clean(jsonData["title"])
-                if jsonData["slug"]:
-                    slug = bleach.clean(jsonData["slug"])
-                if jsonData["summary"]:
-                    summary = bleach.clean(jsonData["summary"])
-                body = bleach.clean(jsonData["body"])
+            if "body" in jsonData:
+                api_key = False
+                if "api_key" in jsonData:
+                    api_key = bleach.clean(jsonData["api_key"]);
+                    person_array = Person.objects.filter(api_key=api_key)
+                    if len(person_array) < 1:
+                        error = True
+                    else:
+                        person = person_array[0]
+                        # Eventually here we should check if they are an admin or if they have permissions to post to the blog
+                        if False:
+                        #if not (getattr(person, "type") == "admin"):
+                            error = True
+                        else:
+                            # Might be better to set these defaults for title and post_date in the model?
+                            title = ""
+                            slug = ""
+                            summary = ""
+                            if jsonData["title"]:
+                                title = bleach.clean(jsonData["title"])
+                            if jsonData["slug"]:
+                                slug = bleach.clean(jsonData["slug"])
+                            if jsonData["summary"]:
+                                summary = bleach.clean(jsonData["summary"])
+                            body = bleach.clean(jsonData["body"])
 
-                #🚸 Find a way to check if it's a date.
-                post_date = datetime.now()
-                if jsonData["post_date"] and len(jsonData["post_date"]) > 2:
-                    post_date = bleach.clean(jsonData["post_date"])
-                post = Post(
-                    title = title,
-                    slug = slug,
-                    summary = summary,
-                    body = body,
-                    post_date = post_date
-                )
-                post.save()
-                post_list = [{
-                    "success": True,
-                    "title": title,
-                    "slug": slug,
-                    "summary": summary,
-                    "body": body,
-                    "post_date": post_date
-                }]
-                return JsonResponse(post_list, safe=False)
-
+                            #🚸 Find a way to check if it's a date.
+                            post_date = datetime.now()
+                            if jsonData["post_date"] and len(jsonData["post_date"]) > 2:
+                                post_date = bleach.clean(jsonData["post_date"])
+                            post = Post(
+                                title = title,
+                                slug = slug,
+                                summary = summary,
+                                body = body,
+                                post_date = post_date
+                            )
+                            post.save()
+                            post_list = [{
+                                "success": True,
+                                "title": title,
+                                "slug": slug,
+                                "summary": summary,
+                                "body": body,
+                                "post_date": post_date
+                            }]
+                            return JsonResponse(post_list, safe=False)
+                else:
+                    print("NO KEY")
             else:
                 return JsonResponse("Error: No Body", status=400, safe=False)
         else:
@@ -143,10 +174,19 @@ def new_post(request):
         return JsonResponse(instructions, safe=False)
         #error = True
     if error == True:
+        errorJSON = "{'error': ''}"
         return JsonResponse(errorJSON, safe=False)
 
+def edit_post(request, slug):
+    print("edit_post " + slug)
+
+def delete_post(request, slug):
+    print("delete_post " + slug)
+    pass
+
+
 def get_plaintext(markdown_text):
-    return bleach.clean(''.join(BeautifulSoup(markdown_text).findAll(text=True)))
+    return bleach.clean(''.join(BeautifulSoup(markdown_text, "html5lib").findAll(text=True)))
 
 def expand_post(post):
     html_body = markdown(post["body"], extensions=["markdown.extensions.extra"])
