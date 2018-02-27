@@ -25,10 +25,18 @@ from markdown import markdown
 # General error message for invalid requests:
 errorJSON = [{"Error": "No data for that request."}]
 
-# posts function is at r'^blog/posts'
 # This function returns all of the posts in the API.
 # At some point this might require pagination
+def root(request):
+    response = {
+        "all_posts" : "http://localhost:8000/v1/blog/posts/"
+    }
+
+    return JsonResponse(response, safe=False)
+
+
 def posts(request):
+    response = {"ok": "ok"}
     # 🚸 Need to make sure incorrect parameters don't crash api server
     # This is for pagination on the blog, should try to make this more general so I can use it elsewhere.
     page = int(bleach.clean(request.GET.get("page", "1")))

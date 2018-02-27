@@ -7,5 +7,5 @@ RUN pip install -r requirements.txt
 ADD . /pwapi/
 
 EXPOSE 8000
-
+RUN ["chmod", "+x", "/pwapi/start.sh"]
 CMD ["/pwapi/start.sh"]

@@ -3,7 +3,7 @@ from django.http import HttpRequest, HttpResponse, JsonResponse
 from people.models import Person
 import bleach
 
-#from django.forms.models import model_to_dict
+from django.forms.models import model_to_dict
 
 # https://docs.python.org/3/library/json.html
 import json

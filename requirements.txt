@@ -1,4 +1,4 @@
-Django>=1.11
+Django>=2.0
 gunicorn>=19.7
 psycopg2==2.7.1
 bleach>=2.0.0
