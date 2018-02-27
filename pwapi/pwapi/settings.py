@@ -52,7 +52,7 @@ INSTALLED_APPS = [
     'django.contrib.sessions',
     'django.contrib.messages',
     'django.contrib.staticfiles',
-    #'storages',
+    'storages',
 ]
 
 MIDDLEWARE = [
@@ -149,3 +149,5 @@ AWS_S3_OBJECT_PARAMETERS = {
 }
 AWS_S3_FILE_OVERWRITE = False
 S3_USE_SIGV4 = True
+
+DEFAULT_FILE_STORAGE = 'images.views.UploadStorage'
