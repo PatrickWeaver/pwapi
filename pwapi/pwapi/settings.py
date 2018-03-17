@@ -29,7 +29,7 @@ else:
     # SECURITY WARNING: don't run with debug turned on in production!
     DEBUG = True
 
-allowed_hosts_array = ['127.0.0.1', 'localhost', '172.18.0.3',]
+allowed_hosts_array = ['127.0.0.1', 'localhost', '172.18.0.3','172.20.0.3', '0.0.0.0']
 
 # If more than one env host needs to be passed separate by '*|*'
 env_hosts = os.environ.get('HOSTS');
@@ -37,15 +37,17 @@ if env_hosts:
     env_hosts_array = env_hosts.split("*|*")
     for i in env_hosts_array:
         allowed_hosts_array.append(i)
-
-ALLOWED_HOSTS = allowed_hosts_array
-
+env_env = os.environ.get('ENV')
+if env_env == "DEV":
+    ALLOWED_HOSTS = ["*"]
+else:
+    ALLOWED_HOSTS = allowed_hosts_array
 
 # Application definition
-
 INSTALLED_APPS = [
-    'people.apps.PeopleConfig',
     'blog.apps.BlogConfig',
+    'people.apps.PeopleConfig',
+    'uploads.apps.UploadsConfig',
     'django.contrib.admin',
     'django.contrib.auth',
     'django.contrib.contenttypes',

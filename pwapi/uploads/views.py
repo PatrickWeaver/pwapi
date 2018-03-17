@@ -9,6 +9,15 @@ from django.urls import reverse_lazy
 
 from .models import Upload
 
+def root(request):
+    response = {}
+    return JsonResponse(response, safe=False)
+
+def new(request):
+    response = {}
+    return JsonResponse(response, safe=False)
+
+
 class UploadStorage(S3Boto3Storage):
     location = 'uploads'
     file_overwrite = False
