@@ -46,3 +46,15 @@ Django 2.0
     "body": body,
     "post_date": post_date
     ```
+
+### Uploads:
+
+- POST request with file:
+    - `/uploads/new/`
+    - `/blog/uploads/new/`
+- Send as `multipart/form-data`
+- With these fields:
+    - `file`
+    - `filename`
+    - `uuid`
+- uuid will be prepended to filename
