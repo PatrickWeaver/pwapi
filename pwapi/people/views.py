@@ -16,10 +16,10 @@ def people(request):
     for i in people:
         person_dict = {}
         person_dict["username"] = getattr(i, "username")
-        person_dict["password"] = getattr(i, "password")
+        #person_dict["password"] = getattr(i, "password")
         person_dict["name"] = getattr(i, "name")
-        person_dict["email"] = getattr(i, "email")
-        person_dict["api_key"] = getattr(i, "api_key")
+        #person_dict["email"] = getattr(i, "email")
+        #person_dict["api_key"] = getattr(i, "api_key")
         people_list.append(person_dict)
     print(people_list)
     return JsonResponse(people_list, safe=False)
