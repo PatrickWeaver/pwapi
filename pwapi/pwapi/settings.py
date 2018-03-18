@@ -152,4 +152,4 @@ AWS_S3_OBJECT_PARAMETERS = {
 AWS_S3_FILE_OVERWRITE = False
 S3_USE_SIGV4 = True
 
-DEFAULT_FILE_STORAGE = 'images.views.UploadStorage'
+DEFAULT_FILE_STORAGE = 'uploads.views.UploadStorage'

@@ -1,9 +1,9 @@
 from django.urls import path
-#from django.views.decorators.csrf import csrf_exempt
+from django.views.decorators.csrf import csrf_exempt
 
 from . import views
 
 urlpatterns = [
     path('', views.root, name='root'),
-    path('new/', views.new, name='posts'),
+    path('new/', csrf_exempt(views.new), name='posts'),
 ]

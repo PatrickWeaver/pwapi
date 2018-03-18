@@ -1,5 +1,5 @@
 from django.shortcuts import render
-
+from django.http import HttpRequest, HttpResponse, JsonResponse
 from storages.backends.s3boto3 import S3Boto3Storage
 
 
@@ -14,7 +14,21 @@ def root(request):
     return JsonResponse(response, safe=False)
 
 def new(request):
-    response = {}
+    print(request.method + ": " + request.path);
+    if request.method == "GET":
+        response = [{"Error": "File upload only via POST."}]
+        return JsonResponse(response, safe=False)
+    elif request.method == "POST":
+        return upload_file(request)
+
+def upload_file(request):
+    for key, value in request.FILES.items() :
+        print (key, value)
+    print(request.POST["uuid"])
+    print(request.POST["filename"])
+    #print(request.FILES["uuid"])
+    #print(request.FILES["filename"])
+    response = [{"Status": "Upload complete."}]
     return JsonResponse(response, safe=False)
 
 
