@@ -7,7 +7,7 @@ from django.contrib.auth.decorators import login_required
 from django.views.generic.edit import CreateView
 from django.urls import reverse_lazy
 
-from .models import Upload
+from . models import Upload
 
 def root(request):
     response = {}
@@ -22,13 +22,17 @@ def new(request):
         return upload_file(request)
 
 def upload_file(request):
-    for key, value in request.FILES.items() :
-        print (key, value)
-    print(request.POST["uuid"])
-    print(request.POST["filename"])
-    #print(request.FILES["uuid"])
-    #print(request.FILES["filename"])
-    response = [{"Status": "Upload complete."}]
+    file_dict = {
+        "upload": request.FILES["file"],
+        "filename": request.POST["filename"],
+        "uuid": request.POST["uuid"]
+    }
+
+    upload = Upload(**file_dict)
+    upload.save()
+
+    upload_url = upload.upload.url
+    response = [{"Status": "Upload complete.", "upload_url": upload_url}]
     return JsonResponse(response, safe=False)
 
 
