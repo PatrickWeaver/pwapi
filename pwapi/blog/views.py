@@ -3,9 +3,7 @@ from django.http import HttpRequest, HttpResponse, JsonResponse
 from django.forms.models import model_to_dict
 from blog.models import Post
 from people.views import check_api_key
-# In case the datetime module is needed it is imported as 'dt'
-# https://docs.python.org/3/library/datetime.html
-import datetime as dt
+
 from datetime import datetime
 # https://docs.python.org/3/library/json.html
 import json
