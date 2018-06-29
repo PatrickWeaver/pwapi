@@ -1,12 +1,6 @@
 from django.db import models
 from datetime import datetime
-
-def create_slug(title, slug, post_date):
-    if slug == "":
-        slug = title.replace(' ', '-').lower()
-    return slug
-
-
+from pwapi.helpers.create_slug import create_slug
 
 class Post(models.Model):
     title = models.CharField(max_length=1024, default="")
