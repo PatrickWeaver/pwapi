@@ -27,7 +27,7 @@ errorJSON = [{"Error": "No data for that request."}]
 
 # This function returns all of the posts in the API.
 # At some point this might require pagination
-def root(request):
+def index(request):
     response = {
         "all_posts" : "http://localhost:8000/v1/blog/posts/"
     }

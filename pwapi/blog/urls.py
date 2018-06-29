@@ -5,7 +5,7 @@ from . import views
 from uploads import views as UploadsViews
 
 urlpatterns = [
-    path('', views.root, name='root'),
+    path('', views.index, name='index'),
     path('posts/', views.posts, name='posts'),
     path('post/<slug:slug>/', csrf_exempt(views.post), name='post'),
     path('uploads/', include('uploads.urls'))
