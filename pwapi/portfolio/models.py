@@ -11,7 +11,7 @@ class Tag(models.Model):
 
     def save(self, *args, **kwargs):
         self.slug = create_slug(self.name, self.slug, self.created_date)
-        super(Post, self).save(*args, **kwargs)
+        super(Tag, self).save(*args, **kwargs)
 
 class Image(models.Model):
     order = models.IntegerField(default=0)
@@ -23,8 +23,8 @@ class Project(models.Model):
     name = models.CharField(max_length=1024, default="")
     slug = models.CharField(max_length=1024, unique=True)
     description = models.TextField(default="")
-    start_date = models.DateTimeField()
-    end_date = models.DateTimeField()
+    start_date = models.DateTimeField(null=True, blank=True)
+    end_date = models.DateTimeField(null=True, blank=True)
     status = models.ForeignKey(Tag, related_name="project_status", on_delete=models.PROTECT)
     tags = models.ManyToManyField(Tag, related_name="project_tags")
     project_url = models.CharField(max_length=1024)
@@ -36,4 +36,4 @@ class Project(models.Model):
 
     def save(self, *args, **kwargs):
         self.slug = create_slug(self.name, self.slug, self.end_date)
-        super(Post, self).save(*args, **kwargs)
+        super(Project, self).save(*args, **kwargs)
