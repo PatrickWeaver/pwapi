@@ -41,3 +41,53 @@ def projects(request):
     }
     # on safe=False: https://stackoverflow.com/questions/28740338/creating-json-array-in-django
     return JsonResponse(response, safe=False)
+
+def project(request, slug):
+    print(request.method + ": " + request.path);
+    if request.method == "GET":
+        return get_project(request, slug)
+    #elif request.method == "POST":
+    #    return new_project(request, slug)
+    #elif request.method == "PUT":
+    #    return edit_project(request, slug)
+    #elif request.method == "DELETE":
+    #    return delete_project(request, slug)
+
+def get_project(request, slug):
+    print("get_project " + slug)
+    project = find_project_from_slug(slug)
+    project_dict = project_dict_from_project(project)
+    if project_dict == {}:
+        return JsonResponse(errorJSON, safe=False)
+    else:
+        response = project_dict
+        return JsonResponse(response, safe=False)
+
+
+def find_project_from_slug(slug):
+    try:
+        project = Project.objects.filter(slug=slug)[0]
+        return project
+    except Project.DoesNotExist:
+        return False
+
+def project_dict_from_project(project):
+    project_dict = {}
+    project_dict["name"] = getattr(project, "name")
+    project_dict["slug"] = getattr(project, "slug")
+    project_dict["description"] = getattr(project, "description")
+    project_dict["start_date"] = getattr(project, "start_date")
+    project_dict["end_date"] = getattr(project, "end_date")
+    project_dict["project_url"] = getattr(project, "project_url")
+    project_dict["source_url"] = getattr(project, "source_url")
+    project_dict["status_id"] = getattr(project, "status_id")
+    project_dict = expand_project(project_dict)
+    return project_dict
+
+
+def expand_project(project):
+    #html_body = markdown(project["description"], extensions=["markdown.extensions.extra"])
+    #post["html_body"] = html_body
+    #plaintext_body = get_plaintext(html_body)
+    #post["plaintext_body"] = plaintext_body
+    return project
