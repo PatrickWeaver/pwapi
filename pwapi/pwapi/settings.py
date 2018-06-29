@@ -47,6 +47,7 @@ else:
 INSTALLED_APPS = [
     'blog.apps.BlogConfig',
     'people.apps.PeopleConfig',
+    'portfolio.apps.PortfolioConfig',
     'uploads.apps.UploadsConfig',
     'django.contrib.admin',
     'django.contrib.auth',

@@ -22,7 +22,7 @@ class Image(models.Model):
 class Project(models.Model):
     name = models.CharField(max_length=1024, default="")
     slug = models.CharField(max_length=1024, unique=True)
-    description = = models.TextField(default="")
+    description = models.TextField(default="")
     start_date = models.DateTimeField()
     end_date = models.DateTimeField()
     status = models.ForeignKey(Tag, on_delete=models.PROTECT)
