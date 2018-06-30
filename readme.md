@@ -1,6 +1,6 @@
 # PW API
 
-Version: 1.0.1
+Version: 1.1.0
 
 Python 3.6
 
@@ -58,3 +58,27 @@ Django 2.0
     - `filename`
     - `uuid`
 - uuid will be prepended to filename
+
+### Portfolio:
+
+- List Projects: `GET /v1/portfolio/projects`
+- View Project: `GET /v1/portfolio/project/[project-slug]`
+- New Project: `POST /v1/portfolio/project/[project-slug`
+- Edit Project: `PUT /v1/portfolio/project/[project-slug]`
+- Delete Project: `DELETE /v1/portfolio/project/[project-slug]`
+
+Project schema:
+
+```
+{
+  "api_key": "secret-api-key",
+  "name": "Name of Project",
+  "slug": "name-of-project",
+  "description": "Information about the project that is more descriptive.",
+  "start_date": "2018-04-25 12:55",
+  "end_date": "2018-05-12 00:00"
+  "project_url": "http://www.website.com/project",
+  "source_url": "http://www.sourcecontrol.com/project",
+  "status_id": "2"
+ }
+ ```
