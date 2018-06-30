@@ -10,6 +10,9 @@ import json
 # bleach is used to sanatize request input
 # https://pypi.python.org/pypi/bleach
 import bleach
+# Allow iframe tags and attributes for YouTube videos:
+bleach.sanitizer.ALLOWED_TAGS.append(u"iframe")
+bleach.sanitizer.ALLOWED_ATTRIBUTES[u"iframe"] = [u"width", u"height", u"src", u"frameborder", u"allow", u"allowfullscreen"]
 
 def index(request):
     return HttpResponse("Portfolio")
@@ -46,8 +49,8 @@ def project(request, slug):
     print(request.method + ": " + request.path);
     if request.method == "GET":
         return get_project(request, slug)
-    #elif request.method == "POST":
-    #    return new_project(request, slug)
+    elif request.method == "POST":
+        return new_project(request, slug)
     #elif request.method == "PUT":
     #    return edit_project(request, slug)
     #elif request.method == "DELETE":
@@ -62,6 +65,20 @@ def get_project(request, slug):
     else:
         response = project_dict
         return JsonResponse(response, safe=False)
+
+def new_project(request, slug):
+    print("new_project " + slug)
+    print("************************")
+    print(request)
+    print("$$$$$$$$$$$$$$$$$$$$$$$$$$")
+    print(request.body)
+    print("$$$$$$$$$$$$$$$$$$$$$$$$$$")
+    project_dict = project_dict_from_request(request)
+    project = project_from_project_dict(project_dict)
+    project_response = response_from_project(project)
+    if not project_response:
+        return JsonResponse(errorJSON, safe=False)
+    return JsonResponse(project_response, safe=False)
 
 
 def find_project_from_slug(slug):
@@ -91,3 +108,75 @@ def expand_project(project):
     #plaintext_body = get_plaintext(html_body)
     #post["plaintext_body"] = plaintext_body
     return project
+
+def project_dict_from_request(request):
+    if not request.body:
+        return False
+    jsonData = json.loads(request.body)
+    if "name" not in jsonData:
+        return False
+    if "api_key" not in jsonData:
+        return False
+    #api_key_valid = check_api_key(bleach.clean(jsonData["api_key"]))
+    api_key_valid = True
+    if not api_key_valid:
+        return False
+    # Might be better to set these defaults for title and post_date in the model?
+    name = ""
+    slug = ""
+    description = ""
+    project_url = ""
+    source_url = ""
+    status_id = False
+    if jsonData["name"]:
+        name = bleach.clean(jsonData["name"])
+    if jsonData["slug"]:
+        slug = bleach.clean(jsonData["slug"])
+    if jsonData["description"]:
+        description = bleach.clean(jsonData["description"])
+    if jsonData["project_url"]:
+        project_url = bleach.clean(jsonData["project_url"])
+    if jsonData["source_url"]:
+        source_url = bleach.clean(jsonData["source_url"])
+    if jsonData["status_id"]:
+        status_id = bleach.clean(jsonData["status_id"])
+
+    #🚸 Find a way to check if it's a date.
+    start_date = datetime.now()
+    if jsonData["start_date"] and len(jsonData["start_date"]) > 2:
+        start_date = bleach.clean(jsonData["start_date"])
+    end_date = datetime.now()
+    if jsonData["end_date"] and len(jsonData["end_date"]) > 2:
+        end_date = bleach.clean(jsonData["end_date"])
+    project_dict = {
+        "name":         name,
+        "slug":         slug,
+        "description":  description,
+        "start_date":   start_date,
+        "end_date":     end_date,
+        "project_url":  project_url,
+        "source_url":   source_url,
+        "status_id":    status_id
+    }
+    return project_dict
+
+def project_from_project_dict(project_dict):
+    if not project_dict:
+        return False
+    project = Project(**project_dict)
+    project.save()
+    return project
+
+def response_from_project(project):
+    response = {
+        "success": True,
+        "name": project.name,
+        "slug": project.slug,
+        "description": project.description,
+        "start_date": project.start_date,
+        "end_date": project.end_date,
+        "project_url": project.project_url,
+        "source_url": project.source_url,
+        "status_id": project.status_id
+    }
+    return response
