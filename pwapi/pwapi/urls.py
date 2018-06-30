@@ -22,6 +22,7 @@ urlpatterns = [
     path('v1/blog/', include('blog.urls')),
     path('v1/bot/', include('bot.urls')),
     path('v1/people/', include('people.urls')),
+    path('v1/portfolio/', include('portfolio.urls')),
     path('v1/uploads/', include('uploads.urls')),
 
     # Root:

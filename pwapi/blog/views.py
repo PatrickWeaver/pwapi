@@ -3,9 +3,7 @@ from django.http import HttpRequest, HttpResponse, JsonResponse
 from django.forms.models import model_to_dict
 from blog.models import Post
 from people.views import check_api_key
-# In case the datetime module is needed it is imported as 'dt'
-# https://docs.python.org/3/library/datetime.html
-import datetime as dt
+
 from datetime import datetime
 # https://docs.python.org/3/library/json.html
 import json
@@ -27,7 +25,7 @@ errorJSON = [{"Error": "No data for that request."}]
 
 # This function returns all of the posts in the API.
 # At some point this might require pagination
-def root(request):
+def index(request):
     response = {
         "all_posts" : "http://localhost:8000/v1/blog/posts/"
     }
@@ -148,17 +146,17 @@ def post_dict_from_request(request):
     title = ""
     slug = ""
     summary = ""
-    if jsonData["title"]:
+    if "title" in jsonData:
         title = bleach.clean(jsonData["title"])
-    if jsonData["slug"]:
+    if "slug" in jsonData:
         slug = bleach.clean(jsonData["slug"])
-    if jsonData["summary"]:
+    if "summary" in jsonData:
         summary = bleach.clean(jsonData["summary"])
     body = bleach.clean(jsonData["body"])
 
     #🚸 Find a way to check if it's a date.
     post_date = datetime.now()
-    if jsonData["post_date"] and len(jsonData["post_date"]) > 2:
+    if "post_date" in jsonData and len(jsonData["post_date"]) > 2:
         post_date = bleach.clean(jsonData["post_date"])
     post_dict = {
         "title":      title,
