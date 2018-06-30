@@ -56,8 +56,8 @@ def project(request, slug):
         return new_project(request, slug)
     elif request.method == "PUT":
         return edit_project(request, slug)
-    #elif request.method == "DELETE":
-    #    return delete_project(request, slug)
+    elif request.method == "DELETE":
+        return delete_project(request, slug)
 
 def get_project(request, slug):
     print("get_project " + slug)
@@ -209,3 +209,8 @@ def update_project_from_dict(project, project_dict):
         else:
             return False
     return project
+
+def delete_project(request, slug):
+    project = find_project_from_slug(slug)
+    project.delete()
+    return JsonResponse({"success": True})
