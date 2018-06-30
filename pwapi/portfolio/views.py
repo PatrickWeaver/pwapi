@@ -14,6 +14,9 @@ import bleach
 bleach.sanitizer.ALLOWED_TAGS.append(u"iframe")
 bleach.sanitizer.ALLOWED_ATTRIBUTES[u"iframe"] = [u"width", u"height", u"src", u"frameborder", u"allow", u"allowfullscreen"]
 
+# General error message for invalid requests:
+errorJSON = [{"Error": "No data for that request."}]
+
 def index(request):
     return HttpResponse("Portfolio")
 
@@ -51,8 +54,8 @@ def project(request, slug):
         return get_project(request, slug)
     elif request.method == "POST":
         return new_project(request, slug)
-    #elif request.method == "PUT":
-    #    return edit_project(request, slug)
+    elif request.method == "PUT":
+        return edit_project(request, slug)
     #elif request.method == "DELETE":
     #    return delete_project(request, slug)
 
@@ -68,11 +71,6 @@ def get_project(request, slug):
 
 def new_project(request, slug):
     print("new_project " + slug)
-    print("************************")
-    print(request)
-    print("$$$$$$$$$$$$$$$$$$$$$$$$$$")
-    print(request.body)
-    print("$$$$$$$$$$$$$$$$$$$$$$$$$$")
     project_dict = project_dict_from_request(request)
     project = project_from_project_dict(project_dict)
     project_response = response_from_project(project)
@@ -182,3 +180,32 @@ def response_from_project(project):
         "status_id": project.status_id
     }
     return response
+
+def edit_project(request, slug):
+    print("edit_project " + slug)
+    project = find_project_from_slug(slug)
+    project_dict = project_dict_from_request(request)
+    print(project_dict)
+    if not project_dict:
+        return JsonResponse(errorJSON, safe=False)
+    project = update_project_from_dict(project, project_dict)
+    project.save()
+    project_response = response_from_project(project)
+    if not project_response:
+        return JsonResponse(errorJSON, safe=False)
+    return JsonResponse(project_response, safe=False)
+
+def find_project_from_slug(slug):
+    try:
+        project = Project.objects.filter(slug=slug)[0]
+        return project
+    except Project.DoesNotExist:
+        return False
+
+def update_project_from_dict(project, project_dict):
+    for key, value in project_dict.items():
+        if hasattr(project, key):
+            setattr(project, key, value)
+        else:
+            return False
+    return project
