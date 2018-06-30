@@ -125,28 +125,30 @@ def project_dict_from_request(request):
     name = ""
     slug = ""
     description = ""
+    start_date = None
+    end_date = None
     project_url = ""
     source_url = ""
     status_id = False
-    if jsonData["name"]:
+    if "name" in jsonData:
         name = bleach.clean(jsonData["name"])
-    if jsonData["slug"]:
+    if "slug" in jsonData:
         slug = bleach.clean(jsonData["slug"])
-    if jsonData["description"]:
+    if "description" in jsonData:
         description = bleach.clean(jsonData["description"])
-    if jsonData["project_url"]:
+    if "project_url" in jsonData:
         project_url = bleach.clean(jsonData["project_url"])
-    if jsonData["source_url"]:
+    if "source_url" in jsonData:
         source_url = bleach.clean(jsonData["source_url"])
-    if jsonData["status_id"]:
+    if "status_id" in jsonData:
         status_id = bleach.clean(jsonData["status_id"])
 
     #🚸 Find a way to check if it's a date.
     start_date = datetime.now()
-    if jsonData["start_date"] and len(jsonData["start_date"]) > 2:
+    if "start_date" in jsonData and len(jsonData["start_date"]) > 2:
         start_date = bleach.clean(jsonData["start_date"])
     end_date = datetime.now()
-    if jsonData["end_date"] and len(jsonData["end_date"]) > 2:
+    if "end_date" in jsonData and len(jsonData["end_date"]) > 2:
         end_date = bleach.clean(jsonData["end_date"])
     project_dict = {
         "name":         name,
