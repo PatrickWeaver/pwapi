@@ -1,5 +1,5 @@
 # Secrets
-.secret.txt
+secret.txt
 
 # Logs
 logs
@@ -9,6 +9,7 @@ logs
 *.pyo
 env
 env*
+.env
 dist
 build
 *.egg
@@ -23,3 +24,5 @@ htmlcov
 .coverage
 .coverage.*
 *,cover
+
+.DS_Store
