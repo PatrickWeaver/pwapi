@@ -91,8 +91,8 @@ WSGI_APPLICATION = 'pwapi.wsgi.application'
 
 # Database
 # https://docs.djangoproject.com/en/2.0/ref/settings/#databases
-
-DATABASES = {
+if os.environ.get('ENV') == "GLITCH":
+  DATABASES = {
     "default": {
         "ENGINE": "django.db.backends.postgresql_psycopg2",
         "NAME": os.environ.get("DBNAME"),
@@ -101,7 +101,18 @@ DATABASES = {
         "HOST": os.environ.get("DBHOST"),
         "PORT": ""
     }
-}
+  }
+else:
+  DATABASES = {
+      "default": {
+          "ENGINE": "django.db.backends.postgresql_psycopg2",
+          "NAME": os.environ.get("DBNAME"),
+          "USER" : os.environ.get("DBUSER"),
+          "PASSWORD": os.environ.get("DBPASS"),
+          "HOST": os.environ.get("DBHOST"),
+          "PORT": ""
+      }
+  }
 
 
 # Password validation
