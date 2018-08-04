@@ -26,3 +26,5 @@ htmlcov
 *,cover
 
 .DS_Store
+.python_history
+.wget-hsts
