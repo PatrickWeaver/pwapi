@@ -118,7 +118,7 @@ def delete_post(request, slug):
 
 def find_post_from_slug(slug):
     try:
-        post = Post.objects.filter(slug=slug)[0]
+        post = Post.objects.get(slug=slug)
         return post
     except Post.DoesNotExist:
         return False

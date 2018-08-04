@@ -66,6 +66,8 @@ def project(request, slug):
 def get_project(request, slug):
     print('get_project ' + slug)
     project = find_project_from_slug(slug)
+    if not project:
+        return JsonResponse(errorJSON, safe=False)
     project_dict = project_dict_from_project(project)
     if project_dict == {}:
         return JsonResponse(errorJSON, safe=False)
@@ -76,8 +78,10 @@ def get_project(request, slug):
 def new_project(request, slug):
     print('new_project ' + slug)
     project_dict = project_dict_from_request(request)
+    if not project_dict:
+        return JsonResponse(errorJSON, safe=False)
     project = project_from_project_dict(project_dict)
-    project_response = response_from_project(project)
+    project_response = new_project_response_from_project(project)
     if not project_response:
         return JsonResponse(errorJSON, safe=False)
     return JsonResponse(project_response, safe=False)
@@ -119,8 +123,7 @@ def project_dict_from_request(request):
         return False
     if 'api_key' not in jsonData:
         return False
-    #api_key_valid = check_api_key(bleach.clean(jsonData["api_key"]))
-    api_key_valid = True
+    api_key_valid = check_api_key(bleach.clean(jsonData["api_key"]))
     if not api_key_valid:
         return False
     # Might be better to set these defaults for title and post_date in the model?
@@ -171,7 +174,7 @@ def project_from_project_dict(project_dict):
     project.save()
     return project
 
-def response_from_project(project):
+def new_project_response_from_project(project):
     response = {
         'success': True,
         'name': project.name,
@@ -201,7 +204,7 @@ def edit_project(request, slug):
 
 def find_project_from_slug(slug):
     try:
-        project = Project.objects.filter(slug=slug)[0]
+        project = Project.objects.get(slug=slug)
         return project
     except Project.DoesNotExist:
         return False
@@ -248,3 +251,127 @@ def tags(request):
     }
     # on safe=False: https://stackoverflow.com/questions/28740338/creating-json-array-in-django
     return JsonResponse(response, safe=False)
+  
+def tag(request, slug):
+    print(request.method + ': ' + request.path);
+    if request.method == 'GET':
+        return get_tag(request, slug)
+    elif request.method == 'POST':
+        return new_tag(request, slug)
+    elif request.method == 'PUT':
+        return edit_tag(request, slug)
+    elif request.method == 'DELETE':
+        return delete_tag(request, slug)
+      
+
+def get_tag(request, slug):
+    print('get_tag ' + slug)
+    tag = find_tag_from_slug(slug)
+    if not tag:
+        return JsonResponse(errorJSON, safe=False)
+    tag_dict = tag_dict_from_tag(tag)
+    if tag_dict == {}:
+        return JsonResponse(errorJSON, safe=False)
+    else:
+        response = tag_dict
+        return JsonResponse(response, safe=False)
+  
+def new_tag(request, slug):
+    print('new_tag ' + slug)
+    tag_dict = tag_dict_from_request(request)
+    if not tag_dict:
+        return JsonResponse(errorJSON, safe=False)
+    tag = tag_from_tag_dict(tag_dict)
+    tag_response = new_tag_response_from_tag(tag)
+    if not tag_response:
+        return JsonResponse(errorJSON, safe=False)
+    return JsonResponse(tag_response, safe=False)
+  
+def edit_tag(request, slug):
+    
+    # *** Placeholder
+    return JsonResponse(errorJSON, safe=False)
+  
+def delete_tag(request, slug):
+    
+    # *** Placeholder
+    return JsonResponse(errorJSON, safe=False)
+
+
+def find_tag_from_slug(slug):
+    try:
+        tag = Tag.objects.get(slug=slug)
+        return tag
+    except Tag.DoesNotExist:
+        return False
+      
+def tag_dict_from_tag(tag):
+    tag_dict = {}
+    tag_dict['id'] = getattr(tag, 'id')
+    tag_dict['name'] = getattr(tag, 'name')
+    tag_dict['slug'] = getattr(tag, 'slug')
+    tag_dict['color'] = getattr(tag, 'color')
+    tag_dict['status'] = getattr(tag, 'status')
+    tag_dict['created_date'] = getattr(tag, 'created_date')
+    return tag_dict
+  
+def tag_dict_from_request(request):
+    if not request.body:
+        return False
+    jsonData = json.loads(request.body.decode('utf-8'))
+    if 'name' not in jsonData:
+        return False
+    if 'status' not in jsonData:
+        return False
+    if 'color' not in jsonData:
+        return False
+    if 'api_key' not in jsonData:
+        return False
+    api_key_valid = check_api_key(bleach.clean(jsonData["api_key"]))
+    if not api_key_valid:
+        return False
+    # Might be better to set these defaults for title and post_date in the model?
+    name = ''
+    slug = ''
+    color = ''
+    status = False
+    if 'name' in jsonData:
+        name = bleach.clean(jsonData['name'])
+    if 'slug' in jsonData:
+        slug = bleach.clean(jsonData['slug'])
+    if 'color' in jsonData:
+        color = bleach.clean(jsonData['color'])
+    if 'status' in jsonData:
+        status = bleach.clean(jsonData['status'])
+        if status.upper() == "TRUE":
+            status = True
+        else:
+            status = False
+
+    tag_dict = {
+        'name':         name,
+        'slug':         slug,
+        'color':        color,
+        'status':       status,
+    }
+    
+    return tag_dict
+  
+def tag_from_tag_dict(tag_dict):
+    if not tag_dict:
+        return False
+    tag = Tag(**tag_dict)
+    tag.save()
+    return tag
+  
+def new_tag_response_from_tag(tag):
+    response = {
+        'success': True,
+        'id':   tag.id,
+        'name': tag.name,
+        'slug': tag.slug,
+        'color': tag.color,
+        'status': tag.status,
+        'created_date': tag.created_date,
+    }
+    return response
