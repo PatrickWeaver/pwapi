@@ -11,56 +11,60 @@ import json
 # https://pypi.python.org/pypi/bleach
 import bleach
 # Allow iframe tags and attributes for YouTube videos:
-bleach.sanitizer.ALLOWED_TAGS.append(u"iframe")
-bleach.sanitizer.ALLOWED_ATTRIBUTES[u"iframe"] = [u"width", u"height", u"src", u"frameborder", u"allow", u"allowfullscreen"]
+bleach.sanitizer.ALLOWED_TAGS.append(u'iframe')
+bleach.sanitizer.ALLOWED_ATTRIBUTES[u'iframe'] = [u'width', u'height', u'src', u'frameborder', u'allow', u'allowfullscreen']
 
 # General error message for invalid requests:
-errorJSON = [{"Error": "No data for that request."}]
+errorJSON = [{'Error': 'No data for that request.'}]
 
 def index(request):
-    return HttpResponse("Portfolio")
+    return HttpResponse('Portfolio')
 
+  
+#  --- --- --- --- --- --- #
+# - - - - PROJECTS - - - - #
+# --- --- --- --- --- ---  #
 
 def projects(request):
-    response = {"ok": "ok"}
+    response = {'ok': 'ok'}
     # No pagination for now:
     # See blog.views.posts for example
 
     all_projects = Project.objects.all()
-    number_of_projects = all_projects.count();
-    projects = all_projects.order_by("-start_date").values("name", "slug", "description", "start_date", "end_date", "project_url", "status_id")
+    number_of_projects = all_projects.count()
+    projects = all_projects.order_by('-start_date').values('name', 'slug', 'description', 'start_date', 'end_date', 'project_url', 'status_id')
     index_list = []
     for project in projects:
         index_project = {
-            "name":         project["name"],
-            "slug":         project["slug"],
-            "description":  project["description"],
-            "start_date":   project["start_date"],
-            "end_date":     project["end_date"],
-            "project_url":  project["project_url"],
-            "status_id":    project["status_id"]
+            'name':         project['name'],
+            'slug':         project['slug'],
+            'description':  project['description'],
+            'start_date':   project['start_date'],
+            'end_date':     project['end_date'],
+            'project_url':  project['project_url'],
+            'status_id':    project['status_id'],
         }
         index_list.append(index_project)
     response = {
-        "total_projects":  number_of_projects,
-        "projects_list":   index_list,
+        'total_projects':  number_of_projects,
+        'projects_list':   index_list,
     }
     # on safe=False: https://stackoverflow.com/questions/28740338/creating-json-array-in-django
     return JsonResponse(response, safe=False)
 
 def project(request, slug):
-    print(request.method + ": " + request.path);
-    if request.method == "GET":
+    print(request.method + ': ' + request.path);
+    if request.method == 'GET':
         return get_project(request, slug)
-    elif request.method == "POST":
+    elif request.method == 'POST':
         return new_project(request, slug)
-    elif request.method == "PUT":
+    elif request.method == 'PUT':
         return edit_project(request, slug)
-    elif request.method == "DELETE":
+    elif request.method == 'DELETE':
         return delete_project(request, slug)
 
 def get_project(request, slug):
-    print("get_project " + slug)
+    print('get_project ' + slug)
     project = find_project_from_slug(slug)
     project_dict = project_dict_from_project(project)
     if project_dict == {}:
@@ -70,7 +74,7 @@ def get_project(request, slug):
         return JsonResponse(response, safe=False)
 
 def new_project(request, slug):
-    print("new_project " + slug)
+    print('new_project ' + slug)
     project_dict = project_dict_from_request(request)
     project = project_from_project_dict(project_dict)
     project_response = response_from_project(project)
@@ -88,14 +92,14 @@ def find_project_from_slug(slug):
 
 def project_dict_from_project(project):
     project_dict = {}
-    project_dict["name"] = getattr(project, "name")
-    project_dict["slug"] = getattr(project, "slug")
-    project_dict["description"] = getattr(project, "description")
-    project_dict["start_date"] = getattr(project, "start_date")
-    project_dict["end_date"] = getattr(project, "end_date")
-    project_dict["project_url"] = getattr(project, "project_url")
-    project_dict["source_url"] = getattr(project, "source_url")
-    project_dict["status_id"] = getattr(project, "status_id")
+    project_dict['name'] = getattr(project, 'name')
+    project_dict['slug'] = getattr(project, 'slug')
+    project_dict['description'] = getattr(project, 'description')
+    project_dict['start_date'] = getattr(project, 'start_date')
+    project_dict['end_date'] = getattr(project, 'end_date')
+    project_dict['project_url'] = getattr(project, 'project_url')
+    project_dict['source_url'] = getattr(project, 'source_url')
+    project_dict['status_id'] = getattr(project, 'status_id')
     project_dict = expand_project(project_dict)
     return project_dict
 
@@ -111,52 +115,52 @@ def project_dict_from_request(request):
     if not request.body:
         return False
     jsonData = json.loads(request.body.decode('utf-8'))
-    if "name" not in jsonData:
+    if 'name' not in jsonData:
         return False
-    if "api_key" not in jsonData:
+    if 'api_key' not in jsonData:
         return False
     #api_key_valid = check_api_key(bleach.clean(jsonData["api_key"]))
     api_key_valid = True
     if not api_key_valid:
         return False
     # Might be better to set these defaults for title and post_date in the model?
-    name = ""
-    slug = ""
-    description = ""
+    name = ''
+    slug = ''
+    description = ''
     start_date = None
     end_date = None
-    project_url = ""
-    source_url = ""
+    project_url = ''
+    source_url = ''
     status_id = False
-    if "name" in jsonData:
-        name = bleach.clean(jsonData["name"])
-    if "slug" in jsonData:
-        slug = bleach.clean(jsonData["slug"])
-    if "description" in jsonData:
-        description = bleach.clean(jsonData["description"])
-    if "project_url" in jsonData:
-        project_url = bleach.clean(jsonData["project_url"])
-    if "source_url" in jsonData:
-        source_url = bleach.clean(jsonData["source_url"])
-    if "status_id" in jsonData:
-        status_id = bleach.clean(jsonData["status_id"])
+    if 'name' in jsonData:
+        name = bleach.clean(jsonData['name'])
+    if 'slug' in jsonData:
+        slug = bleach.clean(jsonData['slug'])
+    if 'description' in jsonData:
+        description = bleach.clean(jsonData['description'])
+    if 'project_url' in jsonData:
+        project_url = bleach.clean(jsonData['project_url'])
+    if 'source_url' in jsonData:
+        source_url = bleach.clean(jsonData['source_url'])
+    if 'status_id' in jsonData:
+        status_id = bleach.clean(jsonData['status_id'])
 
     #🚸 Find a way to check if it's a date.
     start_date = datetime.now()
-    if "start_date" in jsonData and len(jsonData["start_date"]) > 2:
-        start_date = bleach.clean(jsonData["start_date"])
+    if 'start_date' in jsonData and len(jsonData['start_date']) > 2:
+        start_date = bleach.clean(jsonData['start_date'])
     end_date = datetime.now()
-    if "end_date" in jsonData and len(jsonData["end_date"]) > 2:
-        end_date = bleach.clean(jsonData["end_date"])
+    if 'end_date' in jsonData and len(jsonData['end_date']) > 2:
+        end_date = bleach.clean(jsonData['end_date'])
     project_dict = {
-        "name":         name,
-        "slug":         slug,
-        "description":  description,
-        "start_date":   start_date,
-        "end_date":     end_date,
-        "project_url":  project_url,
-        "source_url":   source_url,
-        "status_id":    status_id
+        'name':         name,
+        'slug':         slug,
+        'description':  description,
+        'start_date':   start_date,
+        'end_date':     end_date,
+        'project_url':  project_url,
+        'source_url':   source_url,
+        'status_id':    status_id
     }
     return project_dict
 
@@ -169,20 +173,20 @@ def project_from_project_dict(project_dict):
 
 def response_from_project(project):
     response = {
-        "success": True,
-        "name": project.name,
-        "slug": project.slug,
-        "description": project.description,
-        "start_date": project.start_date,
-        "end_date": project.end_date,
-        "project_url": project.project_url,
-        "source_url": project.source_url,
-        "status_id": project.status_id
+        'success': True,
+        'name': project.name,
+        'slug': project.slug,
+        'description': project.description,
+        'start_date': project.start_date,
+        'end_date': project.end_date,
+        'project_url': project.project_url,
+        'source_url': project.source_url,
+        'status_id': project.status_id
     }
     return response
 
 def edit_project(request, slug):
-    print("edit_project " + slug)
+    print('edit_project ' + slug)
     project = find_project_from_slug(slug)
     project_dict = project_dict_from_request(request)
     print(project_dict)
@@ -213,4 +217,34 @@ def update_project_from_dict(project, project_dict):
 def delete_project(request, slug):
     project = find_project_from_slug(slug)
     project.delete()
-    return JsonResponse({"success": True})
+    return JsonResponse({'success': True})
+  
+
+#  --- --- --- --- --- --- #
+# - - - - - TAGS - - - - - #
+# --- --- --- --- --- ---  #
+
+def tags(request):
+    response = {'ok': 'ok'}
+    # No pagination for now:
+    # See blog.views.posts for example
+    
+    all_tags = Tag.objects.all()
+    number_of_tags = all_tags.count()
+    tags = all_tags.order_by('name').values('name', 'slug', 'color', 'status', 'created_date')
+    index_list = []
+    for tag in tags:
+        index_tag = {
+            'name':         tag['name'],
+            'slug':         tag['slug'],
+            'color':        tag['color'],
+            'status':       tag['status'],
+            'created_date': tag['created_date'],
+        }
+        index_list.append(index_tag)
+    response = {
+        'total_tags': number_of_tags,
+        'tags_list':  index_list,
+    }
+    # on safe=False: https://stackoverflow.com/questions/28740338/creating-json-array-in-django
+    return JsonResponse(response, safe=False)
