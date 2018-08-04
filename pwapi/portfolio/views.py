@@ -110,7 +110,7 @@ def expand_project(project):
 def project_dict_from_request(request):
     if not request.body:
         return False
-    jsonData = json.loads(request.body)
+    jsonData = json.loads(request.body.decode('utf-8'))
     if "name" not in jsonData:
         return False
     if "api_key" not in jsonData:

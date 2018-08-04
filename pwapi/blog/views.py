@@ -88,24 +88,26 @@ def get_post(request, slug):
 def new_post(request, slug):
     print("new_post " + slug)
     post_dict = post_dict_from_request(request)
-    post = post_from_post_dict(post_dict)
-    post_response = response_from_post(post)
-    if not post_response:
-        return JsonResponse(errorJSON, safe=False)
-    return JsonResponse(post_response, safe=False)
+    if post_dict:
+        post = post_from_post_dict(post_dict)
+        post_response = response_from_post(post)
+        if post_response:
+            return JsonResponse(post_response, safe=False)
+    return JsonResponse(errorJSON, safe=False)
+    
+        
 
 def edit_post(request, slug):
     print("edit_post " + slug)
     post = find_post_from_slug(slug)
     post_dict = post_dict_from_request(request)
-    if not post_dict:
-        return JsonResponse(errorJSON, safe=False)
-    post = update_post_from_dict(post, post_dict)
-    post.save()
-    post_response = response_from_post(post)
-    if not post_response:
-        return JsonResponse(errorJSON, safe=False)
-    return JsonResponse(post_response, safe=False)
+    if post_dict:       
+        post = update_post_from_dict(post, post_dict)
+        post.save()
+        post_response = response_from_post(post)
+        if post_response:
+            return JsonResponse(post_response, safe=False)
+    return JsonResponse(errorJSON, safe=False)
 
 
 def delete_post(request, slug):
@@ -134,10 +136,14 @@ def post_dict_from_post(post):
 def post_dict_from_request(request):
     if not request.body:
         return False
-    jsonData = json.loads(request.body)
+    jsonData = json.loads(request.body.decode('utf-8'))
     if "body" not in jsonData:
+        # ***
+        print("No Body")
         return False
     if "api_key" not in jsonData:
+        # ***
+        print("No API KEY")
         return False
     api_key_valid = check_api_key(bleach.clean(jsonData["api_key"]))
     if not api_key_valid:
