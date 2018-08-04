@@ -9,5 +9,6 @@ urlpatterns = [
     path('projects/', views.projects, name='projects'),
     path('project/<slug:slug>/', csrf_exempt(views.project), name='project'),
     path('tags/', views.tags, name='tags'),
+    path('tag/<slug:slug>/', csrf_exempt(views.tag), name='tag'),
     path('uploads/', include('uploads.urls'))
 ]
