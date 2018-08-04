@@ -64,11 +64,12 @@ def check_api_key(api_key):
     print("CHECKING API KEY")
     person_array = Person.objects.filter(api_key=api_key)
     if len(person_array) < 1:
-        print("API KEY ERROR")
+        print("AUTH ERROR: PERSON NO FOUND OR INVALID API KEY")
         return False
     person = person_array[0]
     # Eventually here we should check if they are an admin or if they have permissions to post to the blog
     if False:
+        print("FALSE IN CHECK API KEY")
     #if not (getattr(person, "type") == "admin"):
         return False
     # API Key is valid, maybe make this more complicated at some point:

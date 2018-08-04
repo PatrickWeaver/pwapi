@@ -14,7 +14,7 @@ then
   fi
 
   if [ ! -f $VIRTUALENV/bin/pip ]; then
-    curl --silent --show-error --retry 5 https://bootstrap.pypa.io/get-pip.py | $VIRTUALENV/bin/python
+    curl --silent --show-error --retry 5 https://bootstrap.pypa.io/get-pip.py | $VIRTUALENV/bin/python3.5
   fi
 
   export PATH=$VIRTUALENV/bin:$PATH
