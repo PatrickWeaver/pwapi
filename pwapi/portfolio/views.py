@@ -76,20 +76,18 @@ def get_project(request, slug):
         return JsonResponse(response, safe=False)
 
 def new_project(request, slug):
-    print('new_project ' + slug)
     project_dict = project_dict_from_request(request)
     if not project_dict:
         return JsonResponse(errorJSON, safe=False)
     project = project_from_project_dict(project_dict)
-    project_response = new_project_response_from_project(project)
+    project_response = new_or_edited_project_response_from_project(project)
     if not project_response:
         return JsonResponse(errorJSON, safe=False)
     return JsonResponse(project_response, safe=False)
-
-
+      
 def find_project_from_slug(slug):
     try:
-        project = Project.objects.filter(slug=slug)[0]
+        project = Project.objects.get(slug=slug)
         return project
     except Project.DoesNotExist:
         return False
@@ -174,7 +172,7 @@ def project_from_project_dict(project_dict):
     project.save()
     return project
 
-def new_project_response_from_project(project):
+def new_or_edited_project_response_from_project(project):
     response = {
         'success': True,
         'name': project.name,
@@ -192,29 +190,21 @@ def edit_project(request, slug):
     print('edit_project ' + slug)
     project = find_project_from_slug(slug)
     project_dict = project_dict_from_request(request)
-    print(project_dict)
     if not project_dict:
         return JsonResponse(errorJSON, safe=False)
     project = update_project_from_dict(project, project_dict)
     project.save()
-    project_response = response_from_project(project)
+    project_response = new_or_edited_project_response_from_project(project)
     if not project_response:
         return JsonResponse(errorJSON, safe=False)
     return JsonResponse(project_response, safe=False)
-
-def find_project_from_slug(slug):
-    try:
-        project = Project.objects.get(slug=slug)
-        return project
-    except Project.DoesNotExist:
-        return False
 
 def update_project_from_dict(project, project_dict):
     for key, value in project_dict.items():
         if hasattr(project, key):
             setattr(project, key, value)
         else:
-            return False
+            print("project does not have attribute " + key)
     return project
 
 def delete_project(request, slug):
@@ -282,20 +272,29 @@ def new_tag(request, slug):
     if not tag_dict:
         return JsonResponse(errorJSON, safe=False)
     tag = tag_from_tag_dict(tag_dict)
-    tag_response = new_tag_response_from_tag(tag)
+    tag_response = new_or_edited_tag_response_from_tag(tag)
     if not tag_response:
         return JsonResponse(errorJSON, safe=False)
     return JsonResponse(tag_response, safe=False)
   
 def edit_tag(request, slug):
-    
-    # *** Placeholder
-    return JsonResponse(errorJSON, safe=False)
+    print('edit_tag ' + slug)
+    tag = find_tag_from_slug(slug)
+    tag_dict = tag_dict_from_request(request)
+    if not tag_dict:
+        return JsonResponse(errorJSON, safe=False)
+    tag = update_tag_from_dict(tag, tag_dict)
+    tag.save()
+    tag_response = new_or_edited_tag_response_from_tag(tag)
+    if not tag_response:
+        return JsonResponse(errorJSON, safe=False)
+    return JsonResponse(tag_response, safe=False)
+  
   
 def delete_tag(request, slug):
-    
-    # *** Placeholder
-    return JsonResponse(errorJSON, safe=False)
+    tag = find_tag_from_slug(slug)
+    tag.delete()
+    return JsonResponse({'success': True})
 
 
 def find_tag_from_slug(slug):
@@ -364,7 +363,7 @@ def tag_from_tag_dict(tag_dict):
     tag.save()
     return tag
   
-def new_tag_response_from_tag(tag):
+def new_or_edited_tag_response_from_tag(tag):
     response = {
         'success': True,
         'id':   tag.id,
@@ -375,3 +374,11 @@ def new_tag_response_from_tag(tag):
         'created_date': tag.created_date,
     }
     return response
+  
+def update_tag_from_dict(tag, tag_dict):
+    for key, value in tag_dict.items():
+        if hasattr(tag, key):
+            setattr(tag, key, value)
+        else:
+            print("tag does not have attribute " + key)
+    return tag
