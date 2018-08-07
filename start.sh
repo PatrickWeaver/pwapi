@@ -8,4 +8,4 @@ echo Starting Gunicorn.
 cd pwapi
 exec gunicorn pwapi.wsgi:application \
     --bind 0.0.0.0:3000 \
-    --workers 3
+    --workers 1
