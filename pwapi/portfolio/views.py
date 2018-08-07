@@ -55,28 +55,19 @@ def projects(request):
 
 def project(request, slug):
     print(request.method + ': ' + request.path);
+    
+    required_fields = ['name']
+    allowed_fields = ['slug', 'description', 'start_date', 'end_date', 'project_url', 'source_url', 'status_id'] + required_fields  
+    
     if request.method == 'GET':
         return get_instance(Project, slug)
     elif request.method == 'POST':
-        return new_project(request, slug)
+        return new_instance(request, Project, slug, required_fields, allowed_fields)
     elif request.method == 'PUT':
         return edit_project(request, slug)
     elif request.method == 'DELETE':
         return delete_project(request, slug)
 
-
-def new_project(request, slug):
-    #project_dict = project_dict_from_request(request)
-    project_dict = new_instance(request, Project, slug, ['name'])
-    print("PROJECT DICT:")
-    print(project_dict)
-    if not project_dict:
-        return JsonResponse(errorJSON, safe=False)
-    project = project_from_project_dict(project_dict)
-    project_response = new_or_edited_project_response_from_project(project)
-    if not project_response:
-        return JsonResponse(errorJSON, safe=False)
-    return JsonResponse(project_response, safe=False)
       
 def find_project_from_slug(slug):
     try:
@@ -237,27 +228,20 @@ def tags(request):
   
 def tag(request, slug):
     print(request.method + ': ' + request.path);
+    
+    required_fields = ['name', 'color', 'slug']
+    allowed_fields = ['status'] + required_fields
+    
     if request.method == 'GET':
         return get_instance(Tag, slug)
         #return get_tag(request, slug)
     elif request.method == 'POST':
-        return new_tag(request, slug)
+        return new_instance(request, Tag, slug, required_fields, allowed_fields)
+        #return new_tag(request, slug)
     elif request.method == 'PUT':
         return edit_tag(request, slug)
     elif request.method == 'DELETE':
         return delete_tag(request, slug)
-
-  
-def new_tag(request, slug):
-    print('new_tag ' + slug)
-    tag_dict = tag_dict_from_request(request)
-    if not tag_dict:
-        return JsonResponse(errorJSON, safe=False)
-    tag = tag_from_tag_dict(tag_dict)
-    tag_response = new_or_edited_tag_response_from_tag(tag)
-    if not tag_response:
-        return JsonResponse(errorJSON, safe=False)
-    return JsonResponse(tag_response, safe=False)
   
 def edit_tag(request, slug):
     print('edit_tag ' + slug)

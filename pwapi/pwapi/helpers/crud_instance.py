@@ -1,3 +1,5 @@
+import sys
+
 from django.shortcuts import render
 from django.http import HttpRequest, HttpResponse, JsonResponse
 from django.forms.models import model_to_dict
@@ -11,9 +13,10 @@ import json
 # https://pypi.python.org/pypi/bleach
 import bleach
 
-# General error message for invalid requests:
-errorJSON = [{'Error': 'No data for that request.'}]
-def error():
+
+def error(message):
+    # General error message for invalid requests:
+    errorJSON = [{'Error': 'No data for that request. ' + message}]
     return JsonResponse(errorJSON, safe=False)
   
 def log(req_type, model, slug):
@@ -23,17 +26,28 @@ def get_instance(model, slug):
     log('get', model, slug)
     instance = find_single_instance_from_slug(model, slug)
     if not instance:
-        return error()
+        return error('Can\'t find in db.')
     instance_dict = model_to_dict(instance)
     if not instance_dict:
-        return error()
+        return error('Error parsing data from db.')
     return JsonResponse(instance_dict, safe=False)
 
   
-def new_instance(request, model, slug, required_fields):
+def new_instance(request, model, slug, required_fields, allowed_fields):
     log('new', model, slug)
-    instance_dict = instance_dict_from(request, model, required_fields)
-    return instance_dict
+    parsed_body = check_for_required_fields(request, required_fields)
+    if not parsed_body:
+        return error('No body in request')
+    instance_dict = instance_dict_from(parsed_body, model, required_fields)
+    sanitized_instance_dict = remove_non_allowed_fields(instance_dict, allowed_fields)
+    if sanitized_instance_dict == {}:
+        return error('Error parsing request body.')
+    object_instance = object_instance_from(model, sanitized_instance_dict)
+    if not object_instance:
+        return error('Error saving object')
+    sanitized_instance_dict['success'] = True
+    return JsonResponse(sanitized_instance_dict, safe=False)
+    
 
 def find_single_instance_from_slug(model, slug):
     try:
@@ -43,7 +57,7 @@ def find_single_instance_from_slug(model, slug):
         print('Can\'t find ' + type(model) + ' with slug ' + slug)
         return False
       
-def instance_dict_from(request, model, required_fields):
+def check_for_required_fields(request, required_fields):
     if not request.body:
         return False
     parsed_body = json.loads(request.body.decode('utf-8'))
@@ -55,17 +69,54 @@ def instance_dict_from(request, model, required_fields):
     for field in required_fields:
         if field not in parsed_body:
             return False
+    return parsed_body
+      
+def instance_dict_from(parsed_body, model, required_fields):
     instance_dict = {}
     #🚸 Problem that non allowed fields are inserted
     #🚸 Find a way to check if dates are dates
     for field in parsed_body:
-        bool = False
+        value = bleach.clean(parsed_body[field])
         try:
             field_type = model._meta.get_field(field)  
-            print(field_type.get_internal_type())
+            model_type = field_type.get_internal_type()
+            instance_dict[field] = parse_non_text_field(model_type, value)    
         except:
             pass
-        instance_dict[field] = bleach.clean(parsed_body[field])
+        
     return instance_dict
+  
+def remove_non_allowed_fields(instance_dict, allowed_fields):
+    sanitized_instance_dict = {}
+    for field in allowed_fields:
+        try:
+            sanitized_instance_dict[field] = instance_dict[field]
+        except:
+            sanitized_instance_dict[field] = None
+    return sanitized_instance_dict
+  
+def object_instance_from(model, instance_dict):
+    object_instance = model(**instance_dict)
+    try:
+        object_instance.save()
+        return object_instance
+    except:
+        print("ERROR")
+        print(sys.exc_info()[0])
+        return False
+    #object_instance.save()
+    #return object_instance
+  
+def parse_non_text_field(field_type, value):
+    if field_type == 'BooleanField':
+        if value.upper() == 'TRUE':
+            return True
+        elif value.upper() == 'FALSE':
+            return False
+        else:
+            return error('Boolean field not true or false')
+    else:
+      return value
+    
         
     
