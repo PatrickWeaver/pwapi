@@ -22,6 +22,7 @@ def error(message):
 def log(req_type, model, slug):
     print(req_type + ' ' + str(model.__name__) + ': ' + slug)
 
+# GET Requests:
 def get_instance(model, slug):
     log('get', model, slug)
     instance = find_single_instance_from_slug(model, slug)
@@ -32,12 +33,12 @@ def get_instance(model, slug):
         return error('Error parsing data from db.')
     return JsonResponse(instance_dict, safe=False)
 
-  
+# POST Requests:
 def new_instance(request, model, slug, required_fields, allowed_fields):
     log('new', model, slug)
     parsed_body = check_for_required_fields(request, required_fields)
     if not parsed_body:
-        return error('No body in request')
+        return error('No body in request or incorrect fields')
     instance_dict = instance_dict_from(parsed_body, model, required_fields)
     sanitized_instance_dict = remove_non_allowed_fields(instance_dict, allowed_fields)
     if sanitized_instance_dict == {}:
@@ -47,7 +48,34 @@ def new_instance(request, model, slug, required_fields, allowed_fields):
         return error('Error saving object')
     sanitized_instance_dict['success'] = True
     return JsonResponse(sanitized_instance_dict, safe=False)
+  
+# PUT Requests:
+def edit_instance(request, model, slug, required_fields, allowed_fields):
+  log('edit', model, slug)
+  parsed_body = check_for_required_fields(request, required_fields)
+  if not parsed_body:
+        return error('No body in request or incorrect fields')
+  instance = find_single_instance_from_slug(model, slug)
+  if not instance:
+      return error('Can\'t find in db.')
+  instance_dict = instance_dict_from(parsed_body, model, required_fields)
+  sanitized_instance_dict = remove_non_allowed_fields(instance_dict, allowed_fields)
+  if sanitized_instance_dict == {}:
+      return error('Error parsing request body.')
+  instance = update_instance_using_dict(instance, sanitized_instance_dict)
+  instance.save()
+  updated_instance_dict = model_to_dict(instance)
+  if not updated_instance_dict:
+      return error('Error generating response')
+  updated_instance_dict['success'] = True
+  return JsonResponse(updated_instance_dict, safe=False)
+  
     
+
+#def instance_dict_from_model_and_slug(model, slug):  
+
+  
+  
 
 def find_single_instance_from_slug(model, slug):
     try:
@@ -104,8 +132,6 @@ def object_instance_from(model, instance_dict):
         print("ERROR")
         print(sys.exc_info()[0])
         return False
-    #object_instance.save()
-    #return object_instance
   
 def parse_non_text_field(field_type, value):
     if field_type == 'BooleanField':
@@ -118,5 +144,11 @@ def parse_non_text_field(field_type, value):
     else:
       return value
     
-        
+def update_instance_using_dict(instance, instance_dict):
+    for key, value in instance_dict.items():
+        if hasattr(instance, key):
+            setattr(instance, key, value)
+        else:
+            print('Instance does not have attribute ' + key)
+    return instance
     
