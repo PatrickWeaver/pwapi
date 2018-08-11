@@ -3,7 +3,7 @@ from django.http import HttpRequest, HttpResponse, JsonResponse
 from django.forms.models import model_to_dict
 from portfolio.models import Tag, Image, Project
 from people.views import check_api_key
-from pwapi.helpers.crud_instance import get_instance, new_instance, edit_instance
+from pwapi.helpers.crud_instance import get_instance, new_instance, edit_instance, delete_instance
 
 from datetime import datetime
 # https://docs.python.org/3/library/json.html
@@ -67,7 +67,8 @@ def project(request, slug):
         #return edit_project(request, slug)
         return edit_instance(request, Project, slug, required_fields, allowed_fields)
     elif request.method == 'DELETE':
-        return delete_project(request, slug)
+        #return delete_project(request, slug)
+        return delete_instance(request, Project, slug)
 
       
 def find_project_from_slug(slug):
@@ -235,14 +236,12 @@ def tag(request, slug):
     
     if request.method == 'GET':
         return get_instance(Tag, slug)
-        #return get_tag(request, slug)
     elif request.method == 'POST':
         return new_instance(request, Tag, slug, required_fields, allowed_fields)
-        #return new_tag(request, slug)
     elif request.method == 'PUT':
-        return edit_tag(request, slug)
+        return edit_instance(request, Tag, slug, required_fields, allowed_fields)
     elif request.method == 'DELETE':
-        return delete_tag(request, slug)
+        return delete_instance(request, Tag, slug)
   
 def edit_tag(request, slug):
     print('edit_tag ' + slug)

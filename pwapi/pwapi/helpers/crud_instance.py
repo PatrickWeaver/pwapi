@@ -51,31 +51,37 @@ def new_instance(request, model, slug, required_fields, allowed_fields):
   
 # PUT Requests:
 def edit_instance(request, model, slug, required_fields, allowed_fields):
-  log('edit', model, slug)
-  parsed_body = check_for_required_fields(request, required_fields)
-  if not parsed_body:
-        return error('No body in request or incorrect fields')
-  instance = find_single_instance_from_slug(model, slug)
-  if not instance:
-      return error('Can\'t find in db.')
-  instance_dict = instance_dict_from(parsed_body, model, required_fields)
-  sanitized_instance_dict = remove_non_allowed_fields(instance_dict, allowed_fields)
-  if sanitized_instance_dict == {}:
-      return error('Error parsing request body.')
-  instance = update_instance_using_dict(instance, sanitized_instance_dict)
-  instance.save()
-  updated_instance_dict = model_to_dict(instance)
-  if not updated_instance_dict:
-      return error('Error generating response')
-  updated_instance_dict['success'] = True
-  return JsonResponse(updated_instance_dict, safe=False)
-  
+    log('edit', model, slug)
+    parsed_body = check_for_required_fields(request, required_fields)
+    if not parsed_body:
+          return error('No body in request or incorrect fields')
+    instance = find_single_instance_from_slug(model, slug)
+    if not instance:
+        return error('Can\'t find in db.')
+    instance_dict = instance_dict_from(parsed_body, model, required_fields)
+    sanitized_instance_dict = remove_non_allowed_fields(instance_dict, allowed_fields)
+    if sanitized_instance_dict == {}:
+        return error('Error parsing request body.')
+    instance = update_instance_using_dict(instance, sanitized_instance_dict)
+    instance.save()
+    updated_instance_dict = model_to_dict(instance)
+    if not updated_instance_dict:
+        return error('Error generating response')
+    updated_instance_dict['success'] = True
+    return JsonResponse(updated_instance_dict, safe=False)
     
+# DELETE Requests:
+def delete_instance(request, model, slug):
+    log('delete', model, slug)
+    parsed_body = check_for_required_fields(request, [])
+    if not parsed_body:
+        return error('No body in request or incorrect API key')
+    instance = find_single_instance_from_slug(model, slug)
+    if not instance:
+        return error('Can\'t find in db.')
+    instance.delete()
+    return JsonResponse({'success': True})
 
-#def instance_dict_from_model_and_slug(model, slug):  
-
-  
-  
 
 def find_single_instance_from_slug(model, slug):
     try:
@@ -104,7 +110,7 @@ def instance_dict_from(parsed_body, model, required_fields):
     #🚸 Problem that non allowed fields are inserted
     #🚸 Find a way to check if dates are dates
     for field in parsed_body:
-        value = bleach.clean(parsed_body[field])
+        value = bleach.clean(str(parsed_body[field]))
         try:
             field_type = model._meta.get_field(field)  
             model_type = field_type.get_internal_type()
