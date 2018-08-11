@@ -1,19 +1,10 @@
 from django.shortcuts import render
 from django.http import HttpRequest, HttpResponse, JsonResponse
-from django.forms.models import model_to_dict
 from portfolio.models import Tag, Image, Project
-from people.views import check_api_key
 from pwapi.helpers.crud_instance import get_instance, new_instance, edit_instance, delete_instance
 
-from datetime import datetime
 # https://docs.python.org/3/library/json.html
 import json
-# bleach is used to sanatize request input
-# https://pypi.python.org/pypi/bleach
-import bleach
-# Allow iframe tags and attributes for YouTube videos:
-bleach.sanitizer.ALLOWED_TAGS.append(u'iframe')
-bleach.sanitizer.ALLOWED_ATTRIBUTES[u'iframe'] = [u'width', u'height', u'src', u'frameborder', u'allow', u'allowfullscreen']
 
 # General error message for invalid requests:
 errorJSON = [{'Error': 'No data for that request.'}]
@@ -58,17 +49,8 @@ def project(request, slug):
     
     required_fields = ['name']
     allowed_fields = ['slug', 'description', 'start_date', 'end_date', 'project_url', 'source_url', 'status_id'] + required_fields  
-    
-    if request.method == 'GET':
-        return get_instance(Project, slug)
-    elif request.method == 'POST':
-        return new_instance(request, Project, slug, required_fields, allowed_fields)
-    elif request.method == 'PUT':
-        #return edit_project(request, slug)
-        return edit_instance(request, Project, slug, required_fields, allowed_fields)
-    elif request.method == 'DELETE':
-        #return delete_project(request, slug)
-        return delete_instance(request, Project, slug)
+    return crud_response(request, Project, slug, required_fields, allowed_fields)
+
   
 
 #  --- --- --- --- --- --- #
@@ -106,11 +88,16 @@ def tag(request, slug):
     required_fields = ['name', 'color', 'slug']
     allowed_fields = ['status'] + required_fields
     
+    return crud_response(request, Tag, slug, required_fields, allowed_fields)
+      
+    
+    
+def crud_response(request, model, slug, required_fields, allowed_fields):
     if request.method == 'GET':
-        return get_instance(Tag, slug)
+        return get_instance(model, slug)
     elif request.method == 'POST':
-        return new_instance(request, Tag, slug, required_fields, allowed_fields)
+        return new_instance(request, model, slug, required_fields, allowed_fields)
     elif request.method == 'PUT':
-        return edit_instance(request, Tag, slug, required_fields, allowed_fields)
+        return edit_instance(request, model, slug, required_fields, allowed_fields)
     elif request.method == 'DELETE':
-        return delete_instance(request, Tag, slug)
+        return delete_instance(request, model, slug)

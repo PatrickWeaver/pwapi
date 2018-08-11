@@ -13,6 +13,10 @@ import json
 # https://pypi.python.org/pypi/bleach
 import bleach
 
+# Allow iframe tags and attributes for YouTube videos:
+bleach.sanitizer.ALLOWED_TAGS.append(u'iframe')
+bleach.sanitizer.ALLOWED_ATTRIBUTES[u'iframe'] = [u'width', u'height', u'src', u'frameborder', u'allow', u'allowfullscreen']
+
 
 def error(message):
     # General error message for invalid requests:
