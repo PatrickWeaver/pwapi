@@ -18,13 +18,44 @@ bleach.sanitizer.ALLOWED_TAGS.append(u'iframe')
 bleach.sanitizer.ALLOWED_ATTRIBUTES[u'iframe'] = [u'width', u'height', u'src', u'frameborder', u'allow', u'allowfullscreen']
 
 
+def index_response(request, model, index_fields, order_by):
+    # No pagination for now:
+    model_name = str(model.__name__).lower()
+    log('get', model, 'all')
+    all_instances = model.objects.all()
+    number_of = all_instances.count()
+    ordered_instances = all_instances.order_by(order_by).values(*index_fields)
+    index_list = []
+    for i in ordered_instances:
+        index_list.append(i)
+    
+    response = {
+        'total_' + model_name + 's':   number_of,
+        model_name + '_list':          index_list
+    }
+    # on safe=False: https://stackoverflow.com/questions/28740338/creating-json-array-in-django
+    return JsonResponse(response, safe=False)
+
+
+    
+def crud_response(request, model, slug, required_fields, allowed_fields):
+    if request.method == 'GET':
+        return get_instance(model, slug)
+    elif request.method == 'POST':
+        return new_instance(request, model, slug, required_fields, allowed_fields)
+    elif request.method == 'PUT':
+        return edit_instance(request, model, slug, required_fields, allowed_fields)
+    elif request.method == 'DELETE':
+        return delete_instance(request, model, slug)
+
+
 def error(message):
     # General error message for invalid requests:
     errorJSON = [{'Error': 'No data for that request. ' + message}]
     return JsonResponse(errorJSON, safe=False)
   
 def log(req_type, model, slug):
-    print(req_type + ' ' + str(model.__name__) + ': ' + slug)
+    print(req_type + ' ' + str(model.__name__).lower() + ': ' + slug)
 
 # GET Requests:
 def get_instance(model, slug):

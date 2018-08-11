@@ -1,5 +1,8 @@
+import uuid
+
 from django.db import models
 from datetime import datetime
+
 from pwapi.helpers.create_slug import create_slug
 
 class Tag(models.Model):
@@ -14,10 +17,12 @@ class Tag(models.Model):
         super(Tag, self).save(*args, **kwargs)
 
 class Image(models.Model):
+    uuid = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
     order = models.IntegerField(default=0)
     cover = models.BooleanField(default=False)
-    caption = models.CharField(max_length=1024)
+    caption = models.CharField(max_length=1024, null=True)
     url = models.CharField(max_length=1024)
+    created_date = models.DateTimeField(default=datetime.now)
 
 class Project(models.Model):
     name = models.CharField(max_length=1024, default="")
