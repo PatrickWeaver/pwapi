@@ -17,20 +17,38 @@ import bleach
 bleach.sanitizer.ALLOWED_TAGS.append(u'iframe')
 bleach.sanitizer.ALLOWED_ATTRIBUTES[u'iframe'] = [u'width', u'height', u'src', u'frameborder', u'allow', u'allowfullscreen']
 
+# Default values:
+
+default = {
+    'page': 1,
+    'quantity': 5
+}
+
 
 def index_response(request, model, index_fields, order_by):
-    # No pagination for now:
-    model_name = str(model.__name__).lower()
     log('get', model, 'all')
+  
+    # Pagination
+    try:
+        page = int(bleach.clean(request.GET.get("page", str(default['page']))))
+        quantity = int(bleach.clean(request.GET.get("quantity", str(default['quantity']))))
+    except ValueError:
+        page = default['page']
+        quantity = default['quantity']
+    end_of_page = page * quantity
+    start_of_page = end_of_page - quantity
+    model_name = str(model.__name__).lower()
+    
     all_instances = model.objects.all()
     number_of = all_instances.count()
-    ordered_instances = all_instances.order_by(order_by).values(*index_fields)
+    ordered_instances = all_instances.order_by(order_by)[start_of_page:end_of_page].values(*index_fields)
     index_list = []
     for i in ordered_instances:
         index_list.append(i)
     
     response = {
         'total_' + model_name + 's':   number_of,
+        'page':                        page,
         model_name + '_list':          index_list
     }
     # on safe=False: https://stackoverflow.com/questions/28740338/creating-json-array-in-django
