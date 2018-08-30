@@ -3,6 +3,7 @@ from django.http import HttpRequest, HttpResponse, JsonResponse
 from django.forms.models import model_to_dict
 from blog.models import Post
 from people.views import check_api_key
+from pwapi.helpers.crud_instance import index_response, crud_response
 
 from datetime import datetime
 # https://docs.python.org/3/library/json.html
@@ -31,38 +32,23 @@ def index(request):
     }
 
     return JsonResponse(response, safe=False)
-
+  
 
 def posts(request):
-    response = {"ok": "ok"}
+    ##response = {"ok": "ok"}
     # 🚸 Need to make sure incorrect parameters don't crash api server
     # This is for pagination on the blog, should try to make this more general so I can use it elsewhere.
-    page = int(bleach.clean(request.GET.get("page", "1")))
-    quantity = int(bleach.clean(request.GET.get("quantity", "5")))
-    if type(page) != int:
-        page = 1
-    end_of_page = page * quantity
-    start_of_page = end_of_page - quantity
-    all_posts = Post.objects.all()
-    number_of_posts = all_posts.count();
-    posts = all_posts.order_by("-post_date")[start_of_page:end_of_page].values("title", "slug", "summary", "body", "post_date")
-    index_posts_list = []
-    for post in posts:
-        index_post = {
-            "title":        post["title"],
-            "slug":         post["slug"],
-            "summary":      post["summary"],
-            "post_date":    post["post_date"]
-        }
-        index_post = {**index_post, **preview_post(post)}
-        index_posts_list.append(index_post)
-    response = {
-        "total_posts":  number_of_posts,
-        "page":         page,
-        "posts_list":   index_posts_list,
-    }
-    # on safe=False: https://stackoverflow.com/questions/28740338/creating-json-array-in-django
-    return JsonResponse(response, safe=False)
+    ##page = int(bleach.clean(request.GET.get("page", "1")))
+    ##quantity = int(bleach.clean(request.GET.get("quantity", "5")))
+    ##if type(page) != int:
+    ##    page = 1
+    ##end_of_page = page * quantity
+    ##start_of_page = end_of_page - quantity
+    
+    index_fields = ['title', 'slug', 'summary', 'post_date']
+    order_by = '-post_date'
+    return index_response(request, Post, index_fields, order_by);
+
 
 def post(request, slug):
     print(request.method + ": " + request.path);
