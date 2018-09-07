@@ -8,5 +8,6 @@ urlpatterns = [
     path('', views.index, name='index'),
     path('posts/', views.posts, name='posts'),
     path('post/<slug:slug>/', csrf_exempt(views.post), name='post'),
+    path('posts/<slug:slug>/', csrf_exempt(views.post), name='post'),
     path('uploads/', include('uploads.urls'))
 ]

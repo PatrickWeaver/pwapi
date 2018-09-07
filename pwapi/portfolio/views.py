@@ -17,14 +17,14 @@ def index(request):
 # - - - - PROJECTS - - - - #
 # --- --- --- --- --- ---  #
 
-def projects(request):   
-    index_fields = ['name', 'slug', 'description', 'start_date', 'end_date', 'project_url', 'status_id'] # Add: cover_photo_id
-    order_by = '-start_date'
+def projects(request):
+    index_fields = ['name', 'slug', 'description', 'start_date', 'end_date', 'sort_date', 'project_url', 'status_id'] # Add: cover_photo_id
+    order_by = '-sort_date'
     return index_response(request, Project, index_fields, order_by)
     
 def project(request, slug):
     required_fields = ['name']
-    allowed_fields = ['slug', 'description', 'start_date', 'end_date', 'project_url', 'source_url', 'status_id'] + required_fields  
+    allowed_fields = ['slug', 'description', 'start_date', 'end_date', 'sort_date', 'project_url', 'source_url', 'status_id'] + required_fields  
     return crud_response(request, Project, slug, required_fields, allowed_fields)
 
   

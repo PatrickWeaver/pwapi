@@ -30,6 +30,7 @@ class Project(models.Model):
     description = models.TextField(default="")
     start_date = models.DateTimeField(null=True, blank=True)
     end_date = models.DateTimeField(null=True, blank=True)
+    sort_date = models.DateTimeField()
     status = models.ForeignKey(Tag, related_name="project_status", on_delete=models.PROTECT)
     tags = models.ManyToManyField(Tag, related_name="project_tags")
     project_url = models.CharField(max_length=1024, blank=True, null=True)
@@ -41,4 +42,16 @@ class Project(models.Model):
 
     def save(self, *args, **kwargs):
         self.slug = create_slug(self.name, self.slug, self.end_date)
+        self.sort_date = get_sort_date(self.end_date, self.start_date)
         super(Project, self).save(*args, **kwargs)
+        
+def get_sort_date(end_date, start_date):
+    if end_date:
+        print('using end date')
+        return end_date
+    elif start_date:
+        print('using start date')
+        return start_date
+    else:
+        print('using now')
+        return datetime.now()

@@ -188,7 +188,7 @@ def object_instance_from(model, instance_dict):
         object_instance.save()
         return object_instance
     except:
-        print("ERROR")
+        print("ERROR: Can't create object")
         print(sys.exc_info()[0])
         return False
   

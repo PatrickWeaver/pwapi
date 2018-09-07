@@ -73,4 +73,5 @@ def check_api_key(api_key):
     #if not (getattr(person, "type") == "admin"):
         return False
     # API Key is valid, maybe make this more complicated at some point:
+    print("API KEY VALID")
     return True
