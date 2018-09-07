@@ -17,7 +17,7 @@ class Tag(models.Model):
         super(Tag, self).save(*args, **kwargs)
 
 class Image(models.Model):
-    uuid = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
+    uuid = models.UUIDField(default=uuid.uuid4, editable=False)
     order = models.IntegerField(default=0)
     cover = models.BooleanField(default=False)
     caption = models.CharField(max_length=1024, null=True)

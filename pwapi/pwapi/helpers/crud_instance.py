@@ -59,12 +59,14 @@ def index_response(request, model, index_fields, order_by):
 def crud_response(request, model, slug, required_fields, allowed_fields):
     if request.method == 'GET':
         return get_instance(model, slug)
-    elif request.method == 'POST':
-        return new_instance(request, model, slug, required_fields, allowed_fields)
+    #elif request.method == 'POST':
+    #    return new_instance(request, model, slug, required_fields, allowed_fields)
     elif request.method == 'PUT':
         return edit_instance(request, model, slug, required_fields, allowed_fields)
     elif request.method == 'DELETE':
         return delete_instance(request, model, slug)
+    else:
+        return error('- Only GET requests are allowed at this endpoint.')
 
 
 def error(message):
@@ -87,8 +89,8 @@ def get_instance(model, slug):
     return JsonResponse(instance_dict, safe=False)
 
 # POST Requests:
-def new_instance(request, model, slug, required_fields, allowed_fields):
-    log('new', model, slug)
+def new_instance(request, model, required_fields, allowed_fields):
+    log('new', model)
     parsed_body = check_for_required_fields(request, required_fields)
     if not parsed_body:
         return error('No body in request or incorrect fields')
@@ -137,11 +139,12 @@ def delete_instance(request, model, slug):
 
 
 def find_single_instance_from_slug(model, slug):
+    print(type(slug))
     try:
         instance = model.objects.get(slug=slug)
         return instance
     except model.DoesNotExist:
-        print('Can\'t find ' + type(model) + ' with slug ' + slug)
+        print('Can\'t find ', model, 'with slug', slug)
         return False
       
 def check_for_required_fields(request, required_fields):
