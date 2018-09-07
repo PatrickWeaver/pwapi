@@ -1,7 +1,7 @@
 from django.shortcuts import render
 from django.http import HttpRequest, HttpResponse, JsonResponse
 from portfolio.models import Tag, Image, Project
-from pwapi.helpers.crud_instance import index_response, crud_response, new_instance, edit_instance
+from pwapi.helpers.crud_instance import index_response, crud_response, new_instance, edit_instance, delete_instance
 
 # https://docs.python.org/3/library/json.html
 import json
@@ -44,18 +44,16 @@ def projects(request):
     return index_response(request, Project, index_fields, order_by)
     
 def project(request, slug):
-    print('PROJECT ENDPOINT')
     return crud_response(request, Project, slug, project_required_fields, project_allowed_fields)
 
 def new_project(request):
     return new_instance(request, Project, project_required_fields, project_allowed_fields)
   
 def edit_project(request, slug):
-    print('EDIT ENDPOINT')
     return edit_instance(request, Project, slug, project_required_fields, project_allowed_fields)
   
 def delete_project(request, slug):
-    pass
+    return delete_instance(request, Project, slug)
     
 
 #  --- --- --- --- --- --- #

@@ -61,10 +61,10 @@ def crud_response(request, model, slug, required_fields, allowed_fields):
         return get_instance(model, slug)
     #elif request.method == 'POST':
     #    return new_instance(request, model, slug, required_fields, allowed_fields)
-    elif request.method == 'PUT':
-        return edit_instance(request, model, slug, required_fields, allowed_fields)
-    elif request.method == 'DELETE':
-        return delete_instance(request, model, slug)
+    #elif request.method == 'PUT':
+    #    return edit_instance(request, model, slug, required_fields, allowed_fields)
+    #elif request.method == 'DELETE':
+    #   return delete_instance(request, model, slug)
     else:
         return error('- Only GET requests are allowed at this endpoint.')
 
@@ -74,7 +74,7 @@ def error(message):
     errorJSON = [{'Error': 'No data for that request. ' + message}]
     return JsonResponse(errorJSON, safe=False)
   
-def log(req_type, model, slug):
+def log(req_type, model, slug=""):
     print(req_type + ' ' + str(model.__name__).lower() + ': ' + slug)
 
 # GET Requests:
@@ -90,52 +90,61 @@ def get_instance(model, slug):
 
 # POST Requests:
 def new_instance(request, model, required_fields, allowed_fields):
-    log('new', model)
-    parsed_body = check_for_required_fields(request, required_fields)
-    if not parsed_body:
-        return error('No body in request or incorrect fields')
-    instance_dict = instance_dict_from(parsed_body, model, required_fields)
-    sanitized_instance_dict = remove_non_allowed_fields(instance_dict, allowed_fields)
-    if sanitized_instance_dict == {}:
-        return error('Error parsing request body.')
-    object_instance = object_instance_from(model, sanitized_instance_dict)
-    if not object_instance:
-        return error('Error saving object')
-    sanitized_instance_dict['success'] = True
-    return JsonResponse(sanitized_instance_dict, safe=False)
+    if request.method == 'POST':
+        log('new', model)
+        parsed_body = check_for_required_fields(request, required_fields)
+        if not parsed_body:
+            return error('No body in request or incorrect fields')
+        instance_dict = instance_dict_from(parsed_body, model, required_fields)
+        sanitized_instance_dict = remove_non_allowed_fields(instance_dict, allowed_fields)
+        if sanitized_instance_dict == {}:
+            return error('Error parsing request body.')
+        object_instance = object_instance_from(model, sanitized_instance_dict)
+        if not object_instance:
+            return error('Error saving object')
+        sanitized_instance_dict['success'] = True
+        return JsonResponse(sanitized_instance_dict, safe=False)
+    else:
+        return error('- Only GET requests are allowed at this endpoint.')
   
 # PUT Requests:
 def edit_instance(request, model, slug, required_fields, allowed_fields):
-    log('edit', model, slug)
-    parsed_body = check_for_required_fields(request, required_fields)
-    if not parsed_body:
-          return error('No body in request or incorrect fields')
-    instance = find_single_instance_from_slug(model, slug)
-    if not instance:
-        return error('Can\'t find in db.')
-    instance_dict = instance_dict_from(parsed_body, model, required_fields)
-    sanitized_instance_dict = remove_non_allowed_fields(instance_dict, allowed_fields)
-    if sanitized_instance_dict == {}:
-        return error('Error parsing request body.')
-    instance = update_instance_using_dict(instance, sanitized_instance_dict)
-    instance.save()
-    updated_instance_dict = model_to_dict(instance)
-    if not updated_instance_dict:
-        return error('Error generating response')
-    updated_instance_dict['success'] = True
-    return JsonResponse(updated_instance_dict, safe=False)
+    if request.method == 'POST':
+        log('edit', model, slug)
+        parsed_body = check_for_required_fields(request, required_fields)
+        if not parsed_body:
+              return error('No body in request or incorrect fields')
+        instance = find_single_instance_from_slug(model, slug)
+        if not instance:
+            return error('Can\'t find in db.')
+        instance_dict = instance_dict_from(parsed_body, model, required_fields)
+        sanitized_instance_dict = remove_non_allowed_fields(instance_dict, allowed_fields)
+        if sanitized_instance_dict == {}:
+            return error('Error parsing request body.')
+        instance = update_instance_using_dict(instance, sanitized_instance_dict)
+        instance.save()
+        updated_instance_dict = model_to_dict(instance)
+        if not updated_instance_dict:
+            return error('Error generating response')
+        updated_instance_dict['success'] = True
+        return JsonResponse(updated_instance_dict, safe=False)
+    else:
+        return error('- Only GET requests are allowed at this endpoint.')
     
 # DELETE Requests:
 def delete_instance(request, model, slug):
-    log('delete', model, slug)
-    parsed_body = check_for_required_fields(request, [])
-    if not parsed_body:
-        return error('No body in request or incorrect API key')
-    instance = find_single_instance_from_slug(model, slug)
-    if not instance:
-        return error('Can\'t find in db.')
-    instance.delete()
-    return JsonResponse({'success': True})
+    if request.method == 'POST':
+        log('delete', model, slug)
+        parsed_body = check_for_required_fields(request, [])
+        if not parsed_body:
+            return error('No body in request or incorrect API key')
+        instance = find_single_instance_from_slug(model, slug)
+        if not instance:
+            return error('Can\'t find in db.')
+        instance.delete()
+        return JsonResponse({'success': True})
+    else:
+        return error('- Only GET requests are allowed at this endpoint.')
 
 
 def find_single_instance_from_slug(model, slug):
