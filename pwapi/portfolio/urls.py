@@ -12,8 +12,8 @@ urlpatterns = [
     path('projects/new/', csrf_exempt(views.new_project), name='project'),
   
     # GET
-    path('project/<slug:slug>/', csrf_exempt(views.project), name='project'),
-    path('projects/<slug:slug>/', csrf_exempt(views.project), name='project'),
+    path('project/<slug:slug>/', csrf_exempt(views.get_project), name='project'),
+    path('projects/<slug:slug>/', csrf_exempt(views.get_project), name='project'),
   
     path('project/<slug:slug>/edit/', csrf_exempt(views.edit_project), name='project'),
     path('projects/<slug:slug>/edit/', csrf_exempt(views.edit_project), name='project'),

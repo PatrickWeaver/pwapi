@@ -1,7 +1,7 @@
 from django.shortcuts import render
 from django.http import HttpRequest, HttpResponse, JsonResponse
 from portfolio.models import Tag, Image, Project
-from pwapi.helpers.crud_instance import index_response, crud_response, new_instance, edit_instance, delete_instance
+from pwapi.helpers.crud_instance import index_response, get_instance, new_instance, edit_instance, delete_instance
 
 # https://docs.python.org/3/library/json.html
 import json
@@ -41,10 +41,14 @@ def projects(request):
         'status_id'
     ] # Add: cover_photo_id
     order_by = '-sort_date'
-    return index_response(request, Project, index_fields, order_by)
+    #return index_response(request, Project, index_fields, order_by)
+    return_json = True
+    return index_response(request, Project, index_fields, order_by, return_json)
     
-def project(request, slug):
-    return crud_response(request, Project, slug, project_required_fields, project_allowed_fields)
+def get_project(request, slug):
+    #return get_instance(Project, slug, project_allowed_fields)
+    return_json = True
+    return get_instance(Project, slug, project_allowed_fields, return_json)
 
 def new_project(request):
     return new_instance(request, Project, project_required_fields, project_allowed_fields)

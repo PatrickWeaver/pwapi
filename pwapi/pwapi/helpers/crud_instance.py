@@ -25,7 +25,7 @@ default = {
 }
 
 
-def index_response(request, model, index_fields, order_by):
+def index_response(request, model, index_fields, order_by, return_json):
     log('get', model, 'all')
   
     # Pagination
@@ -52,13 +52,16 @@ def index_response(request, model, index_fields, order_by):
         model_name + '_list':          index_list
     }
     # on safe=False: https://stackoverflow.com/questions/28740338/creating-json-array-in-django
-    return JsonResponse(response, safe=False)
+    if return_json:
+      return JsonResponse(response, safe=False)
+    else:
+      return response
 
 
     
 def crud_response(request, model, slug, required_fields, allowed_fields):
     if request.method == 'GET':
-        return get_instance(model, slug)
+        return get_instance(model, slug, allowed_fields)
     #elif request.method == 'POST':
     #    return new_instance(request, model, slug, required_fields, allowed_fields)
     #elif request.method == 'PUT':
@@ -78,7 +81,7 @@ def log(req_type, model, slug=""):
     print(req_type + ' ' + str(model.__name__).lower() + ': ' + slug)
 
 # GET Requests:
-def get_instance(model, slug):
+def get_instance(model, slug, allowed_fields, return_json):
     log('get', model, slug)
     instance = find_single_instance_from_slug(model, slug)
     if not instance:
@@ -86,7 +89,10 @@ def get_instance(model, slug):
     instance_dict = model_to_dict(instance)
     if not instance_dict:
         return error('Error parsing data from db.')
-    return JsonResponse(instance_dict, safe=False)
+    if (return_json):
+        return JsonResponse(instance_dict, safe=False)
+    else:
+        return instance_dict
 
 # POST Requests:
 def new_instance(request, model, required_fields, allowed_fields):

@@ -11,8 +11,8 @@ urlpatterns = [
     path('post/new/', csrf_exempt(views.new_post), name='post'),
     path('posts/new/', csrf_exempt(views.new_post), name='post'),
   
-    path('post/<slug:slug>/', csrf_exempt(views.post), name='post'),
-    path('posts/<slug:slug>/', csrf_exempt(views.post), name='post'),
+    path('post/<slug:slug>/', csrf_exempt(views.get_post), name='post'),
+    path('posts/<slug:slug>/', csrf_exempt(views.get_post), name='post'),
   
     path('post/<slug:slug>/edit/', csrf_exempt(views.edit_post), name='post'),
     path('posts/<slug:slug>/edit/', csrf_exempt(views.edit_post), name='post'),
