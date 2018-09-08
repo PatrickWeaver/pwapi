@@ -17,18 +17,6 @@ def index(request):
 # - - - - PROJECTS - - - - #
 # --- --- --- --- --- ---  #
 
-project_required_fields = ['name']
-project_allowed_fields = [
-    'slug',
-    'description',
-    'start_date',
-    'end_date',
-    'sort_date',
-    'project_url',
-    'source_url',
-    'status_id'
-] + project_required_fields
-
 def projects(request):
     index_fields = [
         'name',
@@ -41,14 +29,22 @@ def projects(request):
         'status_id'
     ] # Add: cover_photo_id
     order_by = '-sort_date'
-    #return index_response(request, Project, index_fields, order_by)
-    return_json = True
-    return index_response(request, Project, index_fields, order_by, return_json)
-    
+    return index_response(request, Project, index_fields, order_by)
+  
+project_required_fields = ['name']
+project_allowed_fields = [
+    'slug',
+    'description',
+    'start_date',
+    'end_date',
+    'sort_date',
+    'project_url',
+    'source_url',
+    'status_id'
+] + project_required_fields
+
 def get_project(request, slug):
-    #return get_instance(Project, slug, project_allowed_fields)
-    return_json = True
-    return get_instance(Project, slug, project_allowed_fields, return_json)
+    return get_instance(Project, slug, project_allowed_fields)
 
 def new_project(request):
     return new_instance(request, Project, project_required_fields, project_allowed_fields)
@@ -69,13 +65,20 @@ def tags(request):
     order_by = 'name'
     return index_response(request, Tag, index_fields, order_by)
 
+tag_required_fields = ['name', 'color', 'slug']
+tag_allowed_fields = ['status'] + tag_required_fields 
   
-def tag(request, slug):
-    required_fields = ['name', 'color', 'slug']
-    allowed_fields = ['status'] + required_fields 
-    return crud_response(request, Tag, slug, required_fields, allowed_fields)
+def get_tag(request, slug):
+    return get_instance(Tag, slug, tag_allowed_fields)
+  
+def new_tag(request):
+    return new_instance(request, Tag, tag_required_fields, tag_allowed_fields)
       
-    
+def edit_tag(request, slug):
+    return edit_instance(request, Tag, slug, tag_required_fields, tag_allowed_fields)
+  
+def delete_tag(request, slug):
+    return delete_instance(request, Tag, slug)
 
 
 #  --- --- --- --- --- --- #

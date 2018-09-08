@@ -1,22 +1,20 @@
 from django.db import models
-from datetime import datetime
+from django.utils import timezone
 from pwapi.helpers.create_slug import create_slug
 
 class Post(models.Model):
-    title = models.CharField(max_length=1024, default="")
-    slug = models.CharField(max_length=1024, unique=True)
-    summary = models.TextField(default="")
+    title = models.CharField(max_length=1024, null=True)
+    slug = models.CharField(max_length=1024, unique=True, blank=True)
+    summary = models.TextField(null=True)
     body = models.TextField()
-    post_date = models.DateTimeField(default=datetime.now)
-    created_date = models.DateTimeField(default=datetime.now)
-
-    # Implement better datetime with timezones:
-    # import pytz
-    # from datetime import datetime
-    # datetime.utcnow().replace(tzinfo=pytz.utc)
+    post_date = models.DateTimeField(default=timezone.now, blank=True)
+    created_date = models.DateTimeField(default=timezone.now, blank=True)
 
     def save(self, *args, **kwargs):
-        self.slug = create_slug(self.title, self.slug, self.post_date)
+        slug_text = self.body
+        if (self.title):
+          slug_text = self.title    
+        self.slug = create_slug(slug_text, self.slug, self.post_date)
         super(Post, self).save(*args, **kwargs)
 
     def __str__(self):

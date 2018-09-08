@@ -24,8 +24,12 @@ default = {
     'quantity': 5
 }
 
+# Default function for unmodified instance dicts
+def unmodified(instance):
+  return instance
 
-def index_response(request, model, index_fields, order_by, return_json):
+
+def index_response(request, model, index_fields, order_by, modify_each_with=unmodified):
     log('get', model, 'all')
   
     # Pagination
@@ -44,7 +48,8 @@ def index_response(request, model, index_fields, order_by, return_json):
     ordered_instances = all_instances.order_by(order_by)[start_of_page:end_of_page].values(*index_fields)
     index_list = []
     for i in ordered_instances:
-        index_list.append(i)
+        modified_i = modify_each_with(i)
+        index_list.append(modified_i)
     
     response = {
         'total_' + model_name + 's':   number_of,
@@ -52,25 +57,7 @@ def index_response(request, model, index_fields, order_by, return_json):
         model_name + '_list':          index_list
     }
     # on safe=False: https://stackoverflow.com/questions/28740338/creating-json-array-in-django
-    if return_json:
-      return JsonResponse(response, safe=False)
-    else:
-      return response
-
-
-    
-def crud_response(request, model, slug, required_fields, allowed_fields):
-    if request.method == 'GET':
-        return get_instance(model, slug, allowed_fields)
-    #elif request.method == 'POST':
-    #    return new_instance(request, model, slug, required_fields, allowed_fields)
-    #elif request.method == 'PUT':
-    #    return edit_instance(request, model, slug, required_fields, allowed_fields)
-    #elif request.method == 'DELETE':
-    #   return delete_instance(request, model, slug)
-    else:
-        return error('- Only GET requests are allowed at this endpoint.')
-
+    return JsonResponse(response, safe=False)
 
 def error(message):
     # General error message for invalid requests:
@@ -81,7 +68,7 @@ def log(req_type, model, slug=""):
     print(req_type + ' ' + str(model.__name__).lower() + ': ' + slug)
 
 # GET Requests:
-def get_instance(model, slug, allowed_fields, return_json):
+def get_instance(model, slug, allowed_fields, modify_with=unmodified):
     log('get', model, slug)
     instance = find_single_instance_from_slug(model, slug)
     if not instance:
@@ -89,10 +76,8 @@ def get_instance(model, slug, allowed_fields, return_json):
     instance_dict = model_to_dict(instance)
     if not instance_dict:
         return error('Error parsing data from db.')
-    if (return_json):
-        return JsonResponse(instance_dict, safe=False)
-    else:
-        return instance_dict
+    modified_instance_dict = modify_with(instance_dict)
+    return JsonResponse(modified_instance_dict, safe=False)
 
 # POST Requests:
 def new_instance(request, model, required_fields, allowed_fields):
@@ -197,7 +182,7 @@ def remove_non_allowed_fields(instance_dict, allowed_fields):
         try:
             sanitized_instance_dict[field] = instance_dict[field]
         except:
-            sanitized_instance_dict[field] = None
+            print("Not including", field)
     return sanitized_instance_dict
   
 def object_instance_from(model, instance_dict):
@@ -207,7 +192,7 @@ def object_instance_from(model, instance_dict):
         return object_instance
     except:
         print("ERROR: Can't create object")
-        print(sys.exc_info()[0])
+        print(sys.exc_info())
         return False
   
 def parse_non_text_field(field_type, value):
