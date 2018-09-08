@@ -24,6 +24,7 @@ default = {
     'quantity': 5
 }
 
+# Default function for unmodified instance dicts
 def unmodified(instance):
   return instance
 
