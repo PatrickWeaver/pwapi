@@ -23,17 +23,17 @@ urlpatterns = [
   
     path('tags/', views.tags, name='tags'),
   
-    path('tag/new', csrf_exempt(views.new_tag), name='tag'),
-    path('tags/new', csrf_exempt(views.new_tag), name='tag'),
+    path('tag/new/', csrf_exempt(views.new_tag), name='tag'),
+    path('tags/new/', csrf_exempt(views.new_tag), name='tag'),
   
     path('tag/<slug:slug>/', views.get_tag, name='tag'),
     path('tags/<slug:slug>/', views.get_tag, name='tag'),
 
-    path('tag/<slug:slug>/edit', csrf_exempt(views.edit_tag), name='tag'),
-    path('tags/<slug:slug>/edit', csrf_exempt(views.edit_tag), name='tag'),
+    path('tag/<slug:slug>/edit/', csrf_exempt(views.edit_tag), name='tag'),
+    path('tags/<slug:slug>/edit/', csrf_exempt(views.edit_tag), name='tag'),
   
-    path('tag/<slug:slug>/delete', csrf_exempt(views.delete_tag), name='tag'),
-    path('tags/<slug:slug>/delete', csrf_exempt(views.delete_tag), name='tag'),
+    path('tag/<slug:slug>/delete/', csrf_exempt(views.delete_tag), name='tag'),
+    path('tags/<slug:slug>/delete/', csrf_exempt(views.delete_tag), name='tag'),
 
     path('images/', views.images, name='images'),
     path('uploads/', include('uploads.urls'))

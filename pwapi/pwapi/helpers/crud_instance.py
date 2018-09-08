@@ -186,13 +186,15 @@ def remove_non_allowed_fields(instance_dict, allowed_fields):
     return sanitized_instance_dict
   
 def object_instance_from(model, instance_dict):
+    print("* * *")
+    print(instance_dict)
     object_instance = model(**instance_dict)
     try:
         object_instance.save()
         return object_instance
     except:
         print("ERROR: Can't create object")
-        print(sys.exc_info()[0])
+        print(sys.exc_info())
         return False
   
 def parse_non_text_field(field_type, value):

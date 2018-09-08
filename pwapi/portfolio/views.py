@@ -71,7 +71,7 @@ tag_allowed_fields = ['status'] + tag_required_fields
 def get_tag(request, slug):
     return get_instance(Tag, slug, tag_allowed_fields)
   
-def new_tag(request, slug):
+def new_tag(request):
     return new_instance(request, Tag, tag_required_fields, tag_allowed_fields)
       
 def edit_tag(request, slug):
