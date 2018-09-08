@@ -17,18 +17,6 @@ def index(request):
 # - - - - PROJECTS - - - - #
 # --- --- --- --- --- ---  #
 
-project_required_fields = ['name']
-project_allowed_fields = [
-    'slug',
-    'description',
-    'start_date',
-    'end_date',
-    'sort_date',
-    'project_url',
-    'source_url',
-    'status_id'
-] + project_required_fields
-
 def projects(request):
     index_fields = [
         'name',
@@ -42,7 +30,19 @@ def projects(request):
     ] # Add: cover_photo_id
     order_by = '-sort_date'
     return index_response(request, Project, index_fields, order_by)
-    
+  
+project_required_fields = ['name']
+project_allowed_fields = [
+    'slug',
+    'description',
+    'start_date',
+    'end_date',
+    'sort_date',
+    'project_url',
+    'source_url',
+    'status_id'
+] + project_required_fields
+
 def get_project(request, slug):
     return get_instance(Project, slug, project_allowed_fields)
 

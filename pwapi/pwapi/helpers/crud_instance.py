@@ -182,12 +182,10 @@ def remove_non_allowed_fields(instance_dict, allowed_fields):
         try:
             sanitized_instance_dict[field] = instance_dict[field]
         except:
-            sanitized_instance_dict[field] = None
+            print("Not including", field)
     return sanitized_instance_dict
   
 def object_instance_from(model, instance_dict):
-    print("* * *")
-    print(instance_dict)
     object_instance = model(**instance_dict)
     try:
         object_instance.save()
