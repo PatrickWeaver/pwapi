@@ -35,16 +35,11 @@ def index(request):
   
 
 def posts(request):
-    #index_fields = ['title', 'slug', 'summary', 'post_date']
     index_fields = ['title', 'slug', 'summary', 'post_date', 'body']
+    #index_fields = ['title', 'slug', 'summary', 'post_date', 'body']
     order_by = '-post_date'
-    #return index_response(request, Post, index_fields, order_by);
-    return_json = False
-    index_dict = index_response(request, Post, index_fields, order_by, return_json)
-    for post_dict in index_dict["post_list"]:
-        post_dict = expand_preview_post(post_dict)
-    return JsonResponse(index_dict)
-
+    modify_each_with = expand_preview_post
+    return index_response(request, Post, index_fields, order_by, modify_each_with);
   
 post_required_fields = ['body']
 post_allowed_fields = [
@@ -55,11 +50,8 @@ post_allowed_fields = [
 ] + post_required_fields
 
 def get_post(request, slug):
-    # return get_instance(Post, slug, post_allowed_fields)
-    return_json = False
-    post_dict = get_instance(Post, slug, post_allowed_fields, return_json)
-    expanded_post_dict = expand_post(post_dict)
-    return JsonResponse(expanded_post_dict)
+    modify_with = expand_post
+    return get_instance(Post, slug, post_allowed_fields, modify_with)
   
 def new_post(request):
     return new_instance(request, Post, post_required_fields, post_allowed_fields)
@@ -78,10 +70,9 @@ def expand_post(post_dict):
     html_body = markdown(post_dict["body"], extensions=["markdown.extensions.extra"])
     post_dict["html_body"] = html_body
     post_dict["plaintext_body"] = get_plaintext(html_body)
-    return post
+    return post_dict
 
 def expand_preview_post(post_dict):
-    print(post_dict)
     html_body = markdown(post_dict["body"], extensions=["markdown.extensions.extra"])
     plaintext_body = get_plaintext(html_body)
     full_post = False
@@ -89,6 +80,6 @@ def expand_preview_post(post_dict):
         full_post = True
     post_dict["full_post_in_preview"] = full_post
     post_dict["post_preview"] = plaintext_body[0:279] + (" . . ." if not full_post else "")
-    post_dict["body"] = None
+    del post_dict["body"]
     # Try to figure out how to get a markdown preview also
     return post_dict
