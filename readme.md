@@ -23,12 +23,12 @@ Django 2.1
 
 ### Blog:
 
-- See All Posts: `/blog/posts`
+- See All Posts: `/blog/posts/`
     - Paginated by 5 (default):
-        - `blog/posts?page=2`
+        - `blog/posts/?page=2`
     - Quantity per page:
-        - `blog/posts?quantity=10`
-        - `blog/posts?quantity=7&page=2`
+        - `blog/posts/?quantity=10`
+        - `blog/posts/?quantity=7&page=2`
 - New Post: `/blog/posts/new`
     ``` python
     from datetime import datetime

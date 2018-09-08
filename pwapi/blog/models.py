@@ -7,7 +7,7 @@ class Post(models.Model):
     slug = models.CharField(max_length=1024, unique=True)
     summary = models.TextField(default="")
     body = models.TextField()
-    post_date = models.DateTimeField()
+    post_date = models.DateTimeField(default=datetime.now)
     created_date = models.DateTimeField(default=datetime.now)
 
     # Implement better datetime with timezones:
