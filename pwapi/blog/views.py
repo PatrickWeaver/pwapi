@@ -28,7 +28,7 @@ errorJSON = [{"Error": "No data for that request."}]
 # At some point this might require pagination
 def index(request):
     response = {
-        "all_posts" : "http://localhost:8000/v1/blog/posts/"
+        "all_posts" : "/v1/blog/posts/"
     }
 
     return JsonResponse(response, safe=False)
@@ -54,12 +54,12 @@ def post(request, slug):
     print(request.method + ": " + request.path);
     if request.method == "GET":
         return get_post(request, slug)
-    elif request.method == "POST":
-        return new_post(request, slug)
-    elif request.method == "PUT":
-        return edit_post(request, slug)
-    elif request.method == "DELETE":
-        return delete_post(request, slug)
+    #elif request.method == "POST":
+    #    return new_post(request, slug)
+    #elif request.method == "PUT":
+    #    return edit_post(request, slug)
+    #elif request.method == "DELETE":
+    #    return delete_post(request, slug)
 
 def get_post(request, slug):
     print("get_post " + slug)
@@ -71,8 +71,8 @@ def get_post(request, slug):
         response = post_dict
         return JsonResponse(response, safe=False)
 
-def new_post(request, slug):
-    print("new_post " + slug)
+def new_post(request):
+    print("new_post ")
     post_dict = post_dict_from_request(request)
     if post_dict:
         post = post_from_post_dict(post_dict)
