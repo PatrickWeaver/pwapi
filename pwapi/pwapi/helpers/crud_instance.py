@@ -227,7 +227,6 @@ def remove_non_allowed_fields(instance_dict, allowed_fields):
     sanitized_instance_dict = {}
     for field in allowed_fields:
         try:
-            print("Original:", field, "-", instance_dict[field])
             sanitized_instance_dict[field] = instance_dict[field]
         except:
             print(sys.exc_info())

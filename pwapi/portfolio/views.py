@@ -31,7 +31,10 @@ def projects(request):
     order_by = '-sort_date'
     return index_response(request, Project, index_fields, order_by)
   
-project_required_fields = ['name']
+project_required_fields = [
+    'name',
+    'status_id'
+]
 project_allowed_fields = [
     'slug',
     'description',
@@ -39,8 +42,7 @@ project_allowed_fields = [
     'end_date',
     'sort_date',
     'project_url',
-    'source_url',
-    'status_id'
+    'source_url'
 ] + project_required_fields
 
 def get_project(request, slug):
