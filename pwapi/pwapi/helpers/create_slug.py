@@ -7,7 +7,7 @@ def create_slug(text, slug, date, model, id):
     if slug == "" or slug == None:
         slug = text
     sanitized_slug = sanitize_for_url(slug)
-    dup_instance = find_single_instance_from(model, "slug", sanitized_slug, allowed_fields=["slug", "id"])
+    dup_instance = find_single_instance_from(model, "slug", sanitized_slug)
     if dup_instance:
         if id != dup_instance.id:
           sanitized_slug += "-" + date.isoformat()

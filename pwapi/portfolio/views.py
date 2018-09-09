@@ -1,7 +1,7 @@
 from django.shortcuts import render
 from django.http import HttpRequest, HttpResponse, JsonResponse
 from portfolio.models import Tag, Image, Project
-from pwapi.helpers.crud_instance import index_response, get_instance, new_instance, edit_instance, delete_instance, add_children_to
+from pwapi.helpers.crud_instance import index_response, get_instance, new_instance, edit_instance, delete_instance, add_child_to, remove_child_from
 from pwapi.helpers.general import unmodified, remove_hidden_func
 
 from people.views import check_api_key
@@ -114,8 +114,8 @@ def images(request, project, id):
 # - - PROJECT <-> TAG  - - #
 # --- --- --- --- --- ---  #
 
-def add_tags_to_project(request, project_slug):
-    return add_children_to(request, Project, Tag, "slug", project_slug)
+def add_tag_to_project(request, project_slug):
+    return add_child_to(request, Project, Tag, "slug", project_slug)
   
-def remove_tags_from_project(request, slug):
-    return remove_children_from(request, Project, Tag, project_slug)
+def remove_tag_from_project(request, project_slug):
+    return remove_child_from(request, Project, Tag, "slug", project_slug)

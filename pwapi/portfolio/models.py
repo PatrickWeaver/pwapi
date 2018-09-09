@@ -13,7 +13,7 @@ class Tag(models.Model):
     created_date = models.DateTimeField(default=timezone.now, blank=True)
 
     def save(self, *args, **kwargs):
-        self.slug = create_slug(self.name, self.slug, self.created_date, Tag)
+        self.slug = create_slug(self.name, self.slug, self.created_date, Tag, self.id)
         super(Tag, self).save(*args, **kwargs)
 
 class Image(models.Model):

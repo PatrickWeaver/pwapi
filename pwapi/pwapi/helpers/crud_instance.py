@@ -88,7 +88,7 @@ def get_instance(request, model, slug, allowed_fields, modify_with=unmodified):
     if not check_method_type(request, required_method_type):
         return invalid_method(required_method_type)
       
-    instance = find_single_instance_from(model, "slug", slug, allowed_fields)
+    instance = find_single_instance_from(model, "slug", slug)
     if not instance:
         return error("Can\'t find in db.")
       
@@ -167,7 +167,7 @@ def delete_instance(request, model, key, value):
     
     return JsonResponse({'success': True})
 
-def find_single_instance_from(model, lookup_key, lookup_value, allowed_fields=[]):
+def find_single_instance_from(model, lookup_key, lookup_value):
     try:
         filter_dict = {lookup_key: lookup_value}
         instance = model.objects.get(**filter_dict)
@@ -271,42 +271,47 @@ def update_instance_using_dict(instance, instance_dict):
         print(sys.exc_info())
         return False
 
-def add_children_to(request, parent_model, child_model, parent_key, parent_identifier_value):
-    child_identifiers = []
-    child_property = str(child_model.__name__).lower() + "s"
+def add_child_to(request, parent_model, child_model, parent_key, parent_identifier_value):
+    def get_modify_with(parent_instance, child_model_name):
+      return getattr(parent_instance, child_model_name).add
+    return modify_child_on(request, parent_model, child_model, parent_key, parent_identifier_value, get_modify_with)
+  
+def remove_child_from(request, parent_model, child_model, parent_key, parent_identifier_value):
+    def get_modify_with(parent_instance, child_model_name):
+      return getattr(parent_instance, child_model_name).remove
+    return modify_child_on(request, parent_model, child_model, parent_key, parent_identifier_value, get_modify_with)
+    
+    
+def modify_child_on(request, parent_model, child_model, parent_key, parent_identifier_value, get_modify_with):
+    child_model_name = get_model_name(child_model)
     parsed_body = validate_body(request)
+            
     parent_instance = find_single_instance_from(parent_model, parent_key, parent_identifier_value)
+    if not parent_instance:
+        return errror(parent_model__name__ + " not found")
+      
     try:
-        child_key = parsed_body["key"]
+        child_identifier = parsed_body["identifier"]
+        child_identifier_value = parsed_body["value"]
     except:
-        return error('No key provided')
-    count = 0
-    while count >= 0:
-        try:
-            child_identifiers.append(parsed_body[str(count)])
-            count += 1
-        except:
-            count = -1
-    print(child_identifiers)
-    for child_identifier_value in child_identifiers:
-        try:
-            child_instance = find_single_instance_from(child_model, child_key, child_identifier_value)
-            print(child_instance)
-            add = getattr(parent_instance, child_property).add
-            add(child_instance)
-        except:
-            print(sys.exc_info())
-            return error('Error adding child')
+        return error('No identifier provided')
+
+    try:
+        child_instance = find_single_instance_from(child_model, child_identifier, child_identifier_value)
+        modify_with = get_modify_with(parent_instance, child_model_name)
+        modify_with(child_instance)
+    except:
+        print(sys.exc_info())
+        return error('Error adding or removing child')
+    
+    # Should generalize this:
     updated_parent_instance_dict = model_to_dict(parent_instance)
     if not updated_parent_instance_dict:
         return error('Error generating response')
     children_dicts = []
-    for child in updated_parent_instance_dict[child_property]:
+    for child in updated_parent_instance_dict[child_model_name]:
         children_dicts.append(model_to_dict(child))
-    updated_parent_instance_dict[child_property] = children_dicts
+    updated_parent_instance_dict[child_model_name] = children_dicts
     updated_parent_instance_dict['success'] = True
     print(updated_parent_instance_dict)
     return JsonResponse(updated_parent_instance_dict, safe=False)
-  
-def remove_children_from(request, parent_model, child_model, parent):
-    pass
