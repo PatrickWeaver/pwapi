@@ -13,7 +13,7 @@ class Tag(models.Model):
     created_date = models.DateTimeField(default=timezone.now, blank=True)
 
     def save(self, *args, **kwargs):
-        self.slug = create_slug(self.name, self.slug, self.created_date)
+        self.slug = create_slug(self.name, self.slug, self.created_date, Tag, self.id)
         super(Tag, self).save(*args, **kwargs)
 
 class Image(models.Model):
@@ -36,12 +36,12 @@ class Project(models.Model):
     project_url = models.CharField(max_length=1024, blank=True, null=True)
     source_url = models.CharField(max_length=1024, blank=True, null=True)
     images = models.ManyToManyField(Image)
-    is_active = models.BooleanField(default=True, blank=True)
+    is_hidden = models.BooleanField(default=False, blank=False)
     created_date = models.DateTimeField(default=timezone.now, blank=True)
 
 
     def save(self, *args, **kwargs):
-        self.slug = create_slug(self.name, self.slug, self.end_date)
+        self.slug = create_slug(self.name, self.slug, self.created_date, Project, self.id)
         self.sort_date = get_sort_date(self.end_date, self.start_date)
         super(Project, self).save(*args, **kwargs)
         
@@ -53,5 +53,4 @@ def get_sort_date(end_date, start_date):
         print('using start date')
         return start_date
     else:
-        print('using now')
         return timezone.now()
