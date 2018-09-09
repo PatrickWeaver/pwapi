@@ -6,6 +6,8 @@ from django.forms.models import model_to_dict
 
 from people.views import check_api_key
 
+from . general import unmodified
+
 # https://docs.python.org/3/library/json.html
 import json
 
@@ -23,10 +25,6 @@ default = {
     'page': 1,
     'quantity': 5
 }
-
-# Default function for unmodified instance dicts
-def unmodified(instance):
-  return instance
 
 def get_model_name(model):
     return str(model.__name__).lower() + 's'
@@ -53,7 +51,8 @@ def index_response(request, model, index_fields, order_by, modify_each_with=unmo
     index_list = []
     for i in ordered_instances:
         modified_i = modify_each_with(i)
-        index_list.append(modified_i)
+        if modified_i:
+            index_list.append(modified_i)
     
     response = {
         'total_' + model_name:   number_of,
@@ -66,7 +65,6 @@ def index_response(request, model, index_fields, order_by, modify_each_with=unmo
 def error(message):
     # General error message for invalid requests:
     errorJSON = [{'Error': 'No data for that request. ' + message}]
-    #return JsonResponse(errorJSON, safe=False)
     return JsonResponse(errorJSON, safe=False)
   
 def log(req_type, model, slug=""):
@@ -90,15 +88,13 @@ def get_instance(request, model, slug, allowed_fields, modify_with=unmodified):
     if not check_method_type(request, required_method_type):
         return invalid_method(required_method_type)
       
-    instance = find_single_instance_from(model, "slug", slug)
+    instance = find_single_instance_from(model, "slug", slug, allowed_fields)
     if not instance:
         return error("Can\'t find in db.")
       
-    instance_dict = dict_from_single_object(instance)
-    if not instance_dict:
-        return error("Record found, but error converting to dict")
+    sanitized_instance_dict = dict_from_single_object(instance, allowed_fields)
       
-    modified_instance_dict = modify_with(instance_dict)
+    modified_instance_dict = modify_with(sanitized_instance_dict)
     
     return JsonResponse(modified_instance_dict, safe=False)
 
@@ -111,14 +107,16 @@ def new_instance(request, model, required_fields, allowed_fields):
     if not check_method_type(request, required_method_type):
         return invalid_method(required_method_type)
     
-    instance_dict = check_for_required_and_allowed_fields(request, model, required_fields, allowed_fields)
-    if not instance_dict:
+    request_dict = check_for_required_and_allowed_fields(request, model, required_fields, allowed_fields)
+    if not request_dict:
         return error("No body in request or incorrect fields")
       
-    object_instance = object_instance_from(model, instance_dict)
+    object_instance = object_instance_from(model, request_dict)
     if not object_instance:
         return error("Error saving object")
-      
+    
+    instance_dict = dict_from_single_object(object_instance, allowed_fields)
+    
     instance_dict["success"] = True
     return JsonResponse(instance_dict, safe=False)
   
@@ -130,19 +128,19 @@ def edit_instance(request, model, slug, required_fields, allowed_fields):
     if not check_method_type(request, required_method_type):
         return invalid_method(required_method_type)
       
-    instance_dict = check_for_required_and_allowed_fields(request, model, required_fields, allowed_fields)
-    if not instance_dict:
+    request_dict = check_for_required_and_allowed_fields(request, model, required_fields, allowed_fields)
+    if not request_dict:
           return error("No body in request or incorrect fields")
       
     instance = find_single_instance_from(model, "slug", slug)
     if not instance:
         return error("Can't find in db.")
 
-    updated_instance = update_instance_using_dict(instance, instance_dict)
+    updated_instance = update_instance_using_dict(instance, request_dict)
     if not updated_instance:
         return error("Error saving updated object")
     
-    updated_instance_dict = model_to_dict(updated_instance)
+    updated_instance_dict = dict_from_single_object(updated_instance, allowed_fields)
     if not updated_instance_dict:
         return error("Error generating response")
       
@@ -169,20 +167,21 @@ def delete_instance(request, model, key, value):
     
     return JsonResponse({'success': True})
 
-def find_single_instance_from(model, lookup_key, lookup_value):
+def find_single_instance_from(model, lookup_key, lookup_value, allowed_fields=[]):
     try:
         filter_dict = {lookup_key: lookup_value}
         instance = model.objects.get(**filter_dict)
         return instance
-    except model.DoesNotExist:
-        print("Can't find ", model, "with", lookup_key, lookup_value)
+    except:
+        print("ERROR:")
+        print(sys.exc_info())
         return False
 
-def dict_from_single_object(instance):
+def dict_from_single_object(instance, allowed_fields):
     try:
         instance_dict = instance.__dict__
-        del instance_dict["_state"]
-        return instance_dict
+        sanitized_instance_dict = remove_non_allowed_fields(instance_dict, allowed_fields)
+        return sanitized_instance_dict
     except:
         print("ERROR:")
         print(sys.exc_info())

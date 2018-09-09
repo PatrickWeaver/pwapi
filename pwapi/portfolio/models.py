@@ -36,7 +36,7 @@ class Project(models.Model):
     project_url = models.CharField(max_length=1024, blank=True, null=True)
     source_url = models.CharField(max_length=1024, blank=True, null=True)
     images = models.ManyToManyField(Image)
-    is_active = models.BooleanField(default=True, blank=True)
+    is_hidden = models.BooleanField(default=False, blank=False)
     created_date = models.DateTimeField(default=timezone.now, blank=True)
 
 
@@ -53,5 +53,4 @@ def get_sort_date(end_date, start_date):
         print('using start date')
         return start_date
     else:
-        print('using now')
         return timezone.now()

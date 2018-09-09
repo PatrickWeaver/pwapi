@@ -2,9 +2,13 @@ from django.shortcuts import render
 from django.http import HttpRequest, HttpResponse, JsonResponse
 from portfolio.models import Tag, Image, Project
 from pwapi.helpers.crud_instance import index_response, get_instance, new_instance, edit_instance, delete_instance, add_children_to
+from pwapi.helpers.general import unmodified, remove_hidden_func
+
+from people.views import check_api_key
 
 # https://docs.python.org/3/library/json.html
 import json
+import bleach
 
 # General error message for invalid requests:
 errorJSON = [{'Error': 'No data for that request.'}]
@@ -26,10 +30,20 @@ def projects(request):
         'end_date',
         'sort_date',
         'project_url',
-        'status_id'
+        'status_id',
+        'is_hidden'
     ] # Add: cover_photo_id
+    
+    
+    modify_each_with = remove_hidden_func("is_hidden")
+    api_key = bleach.clean(request.GET.get("api_key", ""))
+    if api_key and check_api_key(api_key):
+        modify_each_with = unmodified
+    
     order_by = '-sort_date'
-    return index_response(request, Project, index_fields, order_by)
+    return index_response(request, Project, index_fields, order_by, modify_each_with=modify_each_with)
+
+
   
 project_required_fields = [
     'name',
@@ -42,7 +56,8 @@ project_allowed_fields = [
     'end_date',
     'sort_date',
     'project_url',
-    'source_url'
+    'source_url',
+    'is_hidden'
 ] + project_required_fields
 
 def get_project(request, slug):
@@ -68,7 +83,7 @@ def tags(request):
     return index_response(request, Tag, index_fields, order_by)
 
 tag_required_fields = ['name', 'color', 'slug']
-tag_allowed_fields = ['status'] + tag_required_fields 
+tag_allowed_fields = ['status'] + tag_required_fields
   
 def get_tag(request, slug):
     return get_instance(request, Tag, slug, tag_allowed_fields)
