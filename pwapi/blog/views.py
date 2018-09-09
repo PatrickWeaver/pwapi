@@ -50,7 +50,7 @@ post_allowed_fields = [
 
 def get_post(request, slug):
     modify_with = expand_post
-    return get_instance(Post, slug, post_allowed_fields, modify_with)
+    return get_instance(request, Post, slug, post_allowed_fields, modify_with)
   
 def new_post(request):
     return new_instance(request, Post, post_required_fields, post_allowed_fields)

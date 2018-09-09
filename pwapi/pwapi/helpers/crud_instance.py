@@ -28,11 +28,14 @@ default = {
 def unmodified(instance):
   return instance
 
+def get_model_name(model):
+    return str(model.__name__).lower() + 's'
 
 def index_response(request, model, index_fields, order_by, modify_each_with=unmodified):
     log('get', model, 'all')
   
     # Pagination
+    # Try/except will deal with any non integer values
     try:
         page = int(bleach.clean(request.GET.get("page", str(default['page']))))
         quantity = int(bleach.clean(request.GET.get("quantity", str(default['quantity']))))
@@ -41,7 +44,8 @@ def index_response(request, model, index_fields, order_by, modify_each_with=unmo
         quantity = default['quantity']
     end_of_page = page * quantity
     start_of_page = end_of_page - quantity
-    model_name = str(model.__name__).lower()
+    
+    model_name = get_model_name(model)
     
     all_instances = model.objects.all()
     number_of = all_instances.count()
@@ -52,7 +56,7 @@ def index_response(request, model, index_fields, order_by, modify_each_with=unmo
         index_list.append(modified_i)
     
     response = {
-        'total_' + model_name + 's':   number_of,
+        'total_' + model_name:   number_of,
         'page':                        page,
         model_name + '_list':          index_list
     }
@@ -62,122 +66,161 @@ def index_response(request, model, index_fields, order_by, modify_each_with=unmo
 def error(message):
     # General error message for invalid requests:
     errorJSON = [{'Error': 'No data for that request. ' + message}]
+    #return JsonResponse(errorJSON, safe=False)
     return JsonResponse(errorJSON, safe=False)
   
 def log(req_type, model, slug=""):
-    print(req_type, str(model.__name__).lower(), ':', slug)
+    print(req_type, get_model_name(model), ':', slug)
 
+def check_method_type(request, type):
+    print("Required:", request.method)
+    print("Actual:", type)
+    if request.method == type:
+        return True
+    return False
+  
+def invalid_method(type):
+    return error("- Only " + type  + " requests are allowed at this endpoint.")
+    
 # GET Requests:
-def get_instance(model, slug, allowed_fields, modify_with=unmodified):
+def get_instance(request, model, slug, allowed_fields, modify_with=unmodified):
     log('get', model, slug)
+    
+    required_method_type = "GET"
+    if not check_method_type(request, required_method_type):
+        return invalid_method(required_method_type)
+      
     instance = find_single_instance_from(model, "slug", slug)
     if not instance:
-        return error('Can\'t find in db.')
-    #instance_dict = model_to_dict(instance)
-    instance_dict = instance.__dict__
-    #print(instance_dict)
+        return error("Can\'t find in db.")
+      
+    instance_dict = dict_from_single_object(instance)
     if not instance_dict:
-        return error('Error parsing data from db.')
-    # delete?
-    del instance_dict["_state"]
+        return error("Record found, but error converting to dict")
+      
     modified_instance_dict = modify_with(instance_dict)
+    
     return JsonResponse(modified_instance_dict, safe=False)
 
+  
 # POST Requests:
 def new_instance(request, model, required_fields, allowed_fields):
-    if request.method == 'POST':
-        log('new', model)
-        parsed_body = check_for_required_fields(request, required_fields)
-        if not parsed_body:
-            return error('No body in request or incorrect fields')
-        instance_dict = instance_dict_from(parsed_body, model, required_fields)
-        sanitized_instance_dict = remove_non_allowed_fields(instance_dict, allowed_fields)
-        if sanitized_instance_dict == {}:
-            return error('Error parsing request body.')
-        object_instance = object_instance_from(model, sanitized_instance_dict)
-        if not object_instance:
-            return error('Error saving object')
-        sanitized_instance_dict['success'] = True
-        return JsonResponse(sanitized_instance_dict, safe=False)
-    else:
-        return error('- Only GET requests are allowed at this endpoint.')
+    log('new', model)
+    
+    required_method_type = "POST"
+    if not check_method_type(request, required_method_type):
+        return invalid_method(required_method_type)
+    
+    instance_dict = check_for_required_and_allowed_fields(request, model, required_fields, allowed_fields)
+    if not instance_dict:
+        return error('No body in request or incorrect fields')
+      
+    object_instance = object_instance_from(model, instance_dict)
+    if not object_instance:
+        return error('Error saving object')
+      
+    instance_dict['success'] = True
+    return JsonResponse(instance_dict, safe=False)
   
 # PUT Requests:
 def edit_instance(request, model, slug, required_fields, allowed_fields):
-    if request.method == 'POST':
-        log('edit', model, slug)
-        parsed_body = check_for_required_fields(request, required_fields)
-        if not parsed_body:
-              return error('No body in request or incorrect fields')
-        instance = find_single_instance_from(model, "slug", slug)
-        if not instance:
-            return error('Can\'t find in db.')
-        instance_dict = instance_dict_from(parsed_body, model, required_fields)
-        sanitized_instance_dict = remove_non_allowed_fields(instance_dict, allowed_fields)
-        if sanitized_instance_dict == {}:
-            return error('Error parsing request body.')
-        instance = update_instance_using_dict(instance, sanitized_instance_dict)
-        instance.save()
-        updated_instance_dict = model_to_dict(instance)
-        if not updated_instance_dict:
-            return error('Error generating response')
-        updated_instance_dict['success'] = True
-        return JsonResponse(updated_instance_dict, safe=False)
-    else:
-        return error('- Only GET requests are allowed at this endpoint.')
+    log('edit', model, slug)
+    
+    required_method_type = "POST"
+    if not check_method_type(request, required_method_type):
+        return invalid_method(required_method_type)
+      
+    instance_dict = check_for_required_and_allowed_fields(request, model, required_fields, allowed_fields)
+    if not instance_dict:
+          return error('No body in request or incorrect fields')
+      
+    instance = find_single_instance_from(model, "slug", slug)
+    if not instance:
+        return error('Can\'t find in db.')
+
+    instance = update_instance_using_dict(instance, instance_dict)
+    instance.save()
+    
+    updated_instance_dict = model_to_dict(instance)
+    if not updated_instance_dict:
+        return error('Error generating response')
+      
+    updated_instance_dict['success'] = True
+    return JsonResponse(updated_instance_dict, safe=False)
     
 # DELETE Requests:
 def delete_instance(request, model, key, value):
-    if request.method == 'POST':
-        log('delete by', model, value)
-        parsed_body = check_for_required_fields(request)
-        if not parsed_body:
-            return error('No body in request or incorrect API key')
-        instance = find_single_instance_from(model, key, value)
-        if not instance:
-            return error('Can\'t find in db.')
-        instance.delete()
-        return JsonResponse({'success': True})
-    else:
-        return error('- Only GET requests are allowed at this endpoint.')
+    log('delete by', model, value)
+    
+    required_method_type = "POST"
+    if not check_method_type(request, required_method_type):
+        return invalid_method(required_method_type)
+    
+    instance_dict = check_for_required_and_allowed_fields(request, model)
+    if not instance_dict:
+        return error('No body in request or incorrect API key')
+      
+    instance = find_single_instance_from(model, key, value)
+    if not instance:
+        return error('Can\'t find in db.')
+    instance.delete()
+    
+    return JsonResponse({'success': True})
 
-def find_single_instance_from(model, key, value):
+def find_single_instance_from(model, lookup_key, lookup_value):
     try:
-        filter_dict = {key: value}
+        filter_dict = {lookup_key: lookup_value}
         instance = model.objects.get(**filter_dict)
         return instance
     except model.DoesNotExist:
-        print('Can\'t find ', model, 'with', key, value)
+        print("Can\'t find ", model, "with", lookup_key, lookup_value)
+        return False
+
+def dict_from_single_object(instance):
+    try:
+        instance_dict = instance.__dict__
+        del instance_dict["_state"]
+        return instance_dict
+    except:
+        print("ERROR:")
+        print(sys.exc_info())
         return False
       
-def check_for_required_fields(request, required_fields = []):
+def validate_body(request):
     if not request.body:
         return False
-    parsed_body = json.loads(request.body.decode('utf-8'))
-    if 'api_key' not in parsed_body:
+    parsed_body = json.loads(request.body.decode("utf-8"))
+    if "api_key" not in parsed_body:
         return False
-    api_key_valid = check_api_key(bleach.clean(parsed_body['api_key']))
+    api_key_valid = check_api_key(bleach.clean(parsed_body["api_key"]))
     if not api_key_valid:
         return False
-    for field in required_fields:
-        if field not in parsed_body:
-            return False
     return parsed_body
       
-def instance_dict_from(parsed_body, model, required_fields):
-    instance_dict = {}
-    #🚸 Problem that non allowed fields are inserted
+def check_for_required_and_allowed_fields(request, model, required_fields = [], allowed_fields = ["api_key"]):
+    parsed_body = validate_body(request)
+    parsed_body_with_valid_types = parsed_dict_from(parsed_body, model)
+    sanitized_parsed_body = remove_non_allowed_fields(parsed_body, allowed_fields)
+    if sanitized_parsed_body == {}:
+        print('Error parsing request body.')
+        return False
+    for field in required_fields:
+        if field not in sanitized_parsed_body:
+            return False
+    return sanitized_parsed_body
+      
+def parsed_dict_from(parsed_body, model):
+    parsed_dict = {}
     #🚸 Find a way to check if dates are dates
     for field in parsed_body:
         value = bleach.clean(str(parsed_body[field]))
         try:
             field_type = model._meta.get_field(field)  
             model_type = field_type.get_internal_type()
-            instance_dict[field] = parse_non_text_field(model_type, value)    
+            parsed_dict[field] = parse_non_text_field(model_type, value)    
         except:
             pass
-        
-    return instance_dict
+    return parsed_dict
   
 def remove_non_allowed_fields(instance_dict, allowed_fields):
     sanitized_instance_dict = {}
@@ -187,16 +230,6 @@ def remove_non_allowed_fields(instance_dict, allowed_fields):
         except:
             print("Not including", field)
     return sanitized_instance_dict
-  
-def object_instance_from(model, instance_dict):
-    object_instance = model(**instance_dict)
-    try:
-        object_instance.save()
-        return object_instance
-    except:
-        print("ERROR: Can't create object")
-        print(sys.exc_info())
-        return False
   
 def parse_non_text_field(field_type, value):
     if field_type == 'BooleanField':
@@ -208,6 +241,19 @@ def parse_non_text_field(field_type, value):
             return error('Boolean field not true or false')
     else:
       return value
+  
+
+  
+def object_instance_from(model, instance_dict):
+    object_instance = model(**instance_dict)
+    try:
+        object_instance.save()
+        return object_instance
+    except:
+        print("ERROR: Can't create object")
+        print(sys.exc_info())
+        return False
+
     
 def update_instance_using_dict(instance, instance_dict):
     for key, value in instance_dict.items():
@@ -216,4 +262,43 @@ def update_instance_using_dict(instance, instance_dict):
         else:
             print('Instance does not have attribute ' + key)
     return instance
-    
+
+def add_children_to(request, parent_model, child_model, parent_key, parent_identifier_value):
+    child_identifiers = []
+    child_property = str(child_model.__name__).lower() + "s"
+    parsed_body = validate_body(request)
+    parent_instance = find_single_instance_from(parent_model, parent_key, parent_identifier_value)
+    try:
+        child_key = parsed_body["key"]
+    except:
+        return error('No key provided')
+    count = 0
+    while count >= 0:
+        try:
+            child_identifiers.append(parsed_body[str(count)])
+            count += 1
+        except:
+            count = -1
+    print(child_identifiers)
+    for child_identifier_value in child_identifiers:
+        try:
+            child_instance = find_single_instance_from(child_model, child_key, child_identifier_value)
+            print(child_instance)
+            add = getattr(parent_instance, child_property).add
+            add(child_instance)
+        except:
+            print(sys.exc_info())
+            return error('Error adding child')
+    updated_parent_instance_dict = model_to_dict(parent_instance)
+    if not updated_parent_instance_dict:
+        return error('Error generating response')
+    children_dicts = []
+    for child in updated_parent_instance_dict[child_property]:
+        children_dicts.append(model_to_dict(child))
+    updated_parent_instance_dict[child_property] = children_dicts
+    updated_parent_instance_dict['success'] = True
+    print(updated_parent_instance_dict)
+    return JsonResponse(updated_parent_instance_dict, safe=False)
+  
+def remove_children_from(request, parent_model, child_model, parent):
+    pass

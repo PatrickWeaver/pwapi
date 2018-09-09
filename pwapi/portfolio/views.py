@@ -1,7 +1,7 @@
 from django.shortcuts import render
 from django.http import HttpRequest, HttpResponse, JsonResponse
 from portfolio.models import Tag, Image, Project
-from pwapi.helpers.crud_instance import index_response, get_instance, new_instance, edit_instance, delete_instance
+from pwapi.helpers.crud_instance import index_response, get_instance, new_instance, edit_instance, delete_instance, add_children_to
 
 # https://docs.python.org/3/library/json.html
 import json
@@ -44,7 +44,7 @@ project_allowed_fields = [
 ] + project_required_fields
 
 def get_project(request, slug):
-    return get_instance(Project, slug, project_allowed_fields)
+    return get_instance(request, Project, slug, project_allowed_fields)
 
 def new_project(request):
     return new_instance(request, Project, project_required_fields, project_allowed_fields)
@@ -53,7 +53,7 @@ def edit_project(request, slug):
     return edit_instance(request, Project, slug, project_required_fields, project_allowed_fields)
   
 def delete_project(request, slug):
-    return delete_instance(request, Project, slug)
+    return delete_instance(request, Project, "slug", slug)
     
 
 #  --- --- --- --- --- --- #
@@ -69,7 +69,7 @@ tag_required_fields = ['name', 'color', 'slug']
 tag_allowed_fields = ['status'] + tag_required_fields 
   
 def get_tag(request, slug):
-    return get_instance(Tag, slug, tag_allowed_fields)
+    return get_instance(request, Tag, slug, tag_allowed_fields)
   
 def new_tag(request):
     return new_instance(request, Tag, tag_required_fields, tag_allowed_fields)
@@ -78,7 +78,7 @@ def edit_tag(request, slug):
     return edit_instance(request, Tag, slug, tag_required_fields, tag_allowed_fields)
   
 def delete_tag(request, slug):
-    return delete_instance(request, Tag, slug)
+    return delete_instance(request, Tag, "slug", slug)
 
 
 #  --- --- --- --- --- --- #
@@ -92,3 +92,13 @@ def images(request, project, id):
     order_by = 'url'
     return index_response(request, Image, index_fields, order_by)
 '''
+
+#  --- --- --- --- --- --- #
+# - - PROJECT <-> TAG  - - #
+# --- --- --- --- --- ---  #
+
+def add_tags_to_project(request, project_slug):
+    return add_children_to(request, Project, Tag, "slug", project_slug)
+  
+def remove_tags_from_project(request, slug):
+    return remove_children_from(request, Project, Tag, project_slug)
