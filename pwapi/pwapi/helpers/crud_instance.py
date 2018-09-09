@@ -147,6 +147,7 @@ def edit_instance(request, model, slug, required_fields, allowed_fields):
         return error("Error generating response")
       
     updated_instance_dict["success"] = True
+    print(updated_instance_dict)
     return JsonResponse(updated_instance_dict, safe=False)
     
 # DELETE Requests:
