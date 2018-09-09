@@ -19,6 +19,7 @@ urlpatterns = [
   
     path('post/<slug:slug>/delete/', csrf_exempt(views.delete_post), name='post'),
     path('posts/<slug:slug>/delete/', csrf_exempt(views.delete_post), name='post'),
+    path('post-id/<int:id>/delete/', csrf_exempt(views.delete_post_by_id), name='post'),
   
     path('uploads/', include('uploads.urls'))
 ]

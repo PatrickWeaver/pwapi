@@ -65,17 +65,21 @@ def error(message):
     return JsonResponse(errorJSON, safe=False)
   
 def log(req_type, model, slug=""):
-    print(req_type + ' ' + str(model.__name__).lower() + ': ' + slug)
+    print(req_type, str(model.__name__).lower(), ':', slug)
 
 # GET Requests:
 def get_instance(model, slug, allowed_fields, modify_with=unmodified):
     log('get', model, slug)
-    instance = find_single_instance_from_slug(model, slug)
+    instance = find_single_instance_from(model, "slug", slug)
     if not instance:
         return error('Can\'t find in db.')
-    instance_dict = model_to_dict(instance)
+    #instance_dict = model_to_dict(instance)
+    instance_dict = instance.__dict__
+    #print(instance_dict)
     if not instance_dict:
         return error('Error parsing data from db.')
+    # delete?
+    del instance_dict["_state"]
     modified_instance_dict = modify_with(instance_dict)
     return JsonResponse(modified_instance_dict, safe=False)
 
@@ -105,7 +109,7 @@ def edit_instance(request, model, slug, required_fields, allowed_fields):
         parsed_body = check_for_required_fields(request, required_fields)
         if not parsed_body:
               return error('No body in request or incorrect fields')
-        instance = find_single_instance_from_slug(model, slug)
+        instance = find_single_instance_from(model, "slug", slug)
         if not instance:
             return error('Can\'t find in db.')
         instance_dict = instance_dict_from(parsed_body, model, required_fields)
@@ -123,13 +127,13 @@ def edit_instance(request, model, slug, required_fields, allowed_fields):
         return error('- Only GET requests are allowed at this endpoint.')
     
 # DELETE Requests:
-def delete_instance(request, model, slug):
+def delete_instance(request, model, key, value):
     if request.method == 'POST':
-        log('delete', model, slug)
-        parsed_body = check_for_required_fields(request, [])
+        log('delete by', model, value)
+        parsed_body = check_for_required_fields(request)
         if not parsed_body:
             return error('No body in request or incorrect API key')
-        instance = find_single_instance_from_slug(model, slug)
+        instance = find_single_instance_from(model, key, value)
         if not instance:
             return error('Can\'t find in db.')
         instance.delete()
@@ -137,17 +141,16 @@ def delete_instance(request, model, slug):
     else:
         return error('- Only GET requests are allowed at this endpoint.')
 
-
-def find_single_instance_from_slug(model, slug):
-    print(type(slug))
+def find_single_instance_from(model, key, value):
     try:
-        instance = model.objects.get(slug=slug)
+        filter_dict = {key: value}
+        instance = model.objects.get(**filter_dict)
         return instance
     except model.DoesNotExist:
-        print('Can\'t find ', model, 'with slug', slug)
+        print('Can\'t find ', model, 'with', key, value)
         return False
       
-def check_for_required_fields(request, required_fields):
+def check_for_required_fields(request, required_fields = []):
     if not request.body:
         return False
     parsed_body = json.loads(request.body.decode('utf-8'))
