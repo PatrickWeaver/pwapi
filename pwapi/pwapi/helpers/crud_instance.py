@@ -105,7 +105,7 @@ def get_instance(request, model, slug, allowed_fields, modify_with=unmodified):
   
 # POST Requests:
 def new_instance(request, model, required_fields, allowed_fields):
-    log('new', model)
+    log("new", model)
     
     required_method_type = "POST"
     if not check_method_type(request, required_method_type):
@@ -113,18 +113,18 @@ def new_instance(request, model, required_fields, allowed_fields):
     
     instance_dict = check_for_required_and_allowed_fields(request, model, required_fields, allowed_fields)
     if not instance_dict:
-        return error('No body in request or incorrect fields')
+        return error("No body in request or incorrect fields")
       
     object_instance = object_instance_from(model, instance_dict)
     if not object_instance:
-        return error('Error saving object')
+        return error("Error saving object")
       
-    instance_dict['success'] = True
+    instance_dict["success"] = True
     return JsonResponse(instance_dict, safe=False)
   
 # PUT Requests:
 def edit_instance(request, model, slug, required_fields, allowed_fields):
-    log('edit', model, slug)
+    log("edit", model, slug)
     
     required_method_type = "POST"
     if not check_method_type(request, required_method_type):
@@ -132,25 +132,26 @@ def edit_instance(request, model, slug, required_fields, allowed_fields):
       
     instance_dict = check_for_required_and_allowed_fields(request, model, required_fields, allowed_fields)
     if not instance_dict:
-          return error('No body in request or incorrect fields')
+          return error("No body in request or incorrect fields")
       
     instance = find_single_instance_from(model, "slug", slug)
     if not instance:
-        return error('Can\'t find in db.')
+        return error("Can't find in db.")
 
-    instance = update_instance_using_dict(instance, instance_dict)
-    instance.save()
+    updated_instance = update_instance_using_dict(instance, instance_dict)
+    if not updated_instance:
+        return error("Error saving updated object")
     
-    updated_instance_dict = model_to_dict(instance)
+    updated_instance_dict = model_to_dict(updated_instance)
     if not updated_instance_dict:
-        return error('Error generating response')
+        return error("Error generating response")
       
-    updated_instance_dict['success'] = True
+    updated_instance_dict["success"] = True
     return JsonResponse(updated_instance_dict, safe=False)
     
 # DELETE Requests:
 def delete_instance(request, model, key, value):
-    log('delete by', model, value)
+    log("delete by", model, value)
     
     required_method_type = "POST"
     if not check_method_type(request, required_method_type):
@@ -158,11 +159,11 @@ def delete_instance(request, model, key, value):
     
     instance_dict = check_for_required_and_allowed_fields(request, model)
     if not instance_dict:
-        return error('No body in request or incorrect API key')
+        return error("No body in request or incorrect API key")
       
     instance = find_single_instance_from(model, key, value)
     if not instance:
-        return error('Can\'t find in db.')
+        return error("Can't find in db.")
     instance.delete()
     
     return JsonResponse({'success': True})
@@ -173,7 +174,7 @@ def find_single_instance_from(model, lookup_key, lookup_value):
         instance = model.objects.get(**filter_dict)
         return instance
     except model.DoesNotExist:
-        print("Can\'t find ", model, "with", lookup_key, lookup_value)
+        print("Can't find ", model, "with", lookup_key, lookup_value)
         return False
 
 def dict_from_single_object(instance):
@@ -226,9 +227,11 @@ def remove_non_allowed_fields(instance_dict, allowed_fields):
     sanitized_instance_dict = {}
     for field in allowed_fields:
         try:
+            print("Original:", field, "-", instance_dict[field])
             sanitized_instance_dict[field] = instance_dict[field]
         except:
-            print("Not including", field)
+            print(sys.exc_info())
+            print(field, "not provided, using default")
     return sanitized_instance_dict
   
 def parse_non_text_field(field_type, value):
@@ -250,7 +253,7 @@ def object_instance_from(model, instance_dict):
         object_instance.save()
         return object_instance
     except:
-        print("ERROR: Can't create object")
+        print("ERROR: Can't create object.")
         print(sys.exc_info())
         return False
 
@@ -261,7 +264,13 @@ def update_instance_using_dict(instance, instance_dict):
             setattr(instance, key, value)
         else:
             print('Instance does not have attribute ' + key)
-    return instance
+    try:
+        instance.save()
+        return instance
+    except:
+        print("Error: Can't save updated object.")
+        print(sys.exc_info())
+        return False
 
 def add_children_to(request, parent_model, child_model, parent_key, parent_identifier_value):
     child_identifiers = []
