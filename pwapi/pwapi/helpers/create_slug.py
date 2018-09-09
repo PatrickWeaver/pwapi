@@ -1,16 +1,17 @@
 import re
 from . crud_instance import find_single_instance_from
 
-def create_slug(text, slug, date, model):
+def create_slug(text, slug, date, model, id):
     # Might want to update this later to include date?
     # How to deal with non unique
     if slug == "" or slug == None:
         slug = text
     sanitized_slug = sanitize_for_url(slug)
-    dup_instance = find_single_instance_from(model, "slug", sanitized_slug, allowed_fields=["slug"])
+    dup_instance = find_single_instance_from(model, "slug", sanitized_slug, allowed_fields=["slug", "id"])
     if dup_instance:
-        sanitized_slug += "-" + date.isoformat()
-        sanitized_slug = sanitize_for_url(sanitized_slug)
+        if id != dup_instance.id:
+          sanitized_slug += "-" + date.isoformat()
+          sanitized_slug = sanitize_for_url(sanitized_slug)
     return sanitized_slug
   
 def sanitize_for_url(slug):

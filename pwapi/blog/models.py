@@ -14,7 +14,7 @@ class Post(models.Model):
         slug_text = self.body
         if (self.title):
           slug_text = self.title    
-        self.slug = create_slug(slug_text, self.slug, self.post_date, Post)
+        self.slug = create_slug(slug_text, self.slug, self.post_date, Post, self.id)
         super(Post, self).save(*args, **kwargs)
 
     def __str__(self):

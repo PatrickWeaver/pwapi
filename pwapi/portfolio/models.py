@@ -41,7 +41,7 @@ class Project(models.Model):
 
 
     def save(self, *args, **kwargs):
-        self.slug = create_slug(self.name, self.slug, self.created_date, Project)
+        self.slug = create_slug(self.name, self.slug, self.created_date, Project, self.id)
         self.sort_date = get_sort_date(self.end_date, self.start_date)
         super(Project, self).save(*args, **kwargs)
         
