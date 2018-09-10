@@ -23,6 +23,7 @@ urlpatterns = [
   
     path('project/<slug:project_slug>/add-tag/', csrf_exempt(views.add_tag_to_project), name= 'project-add-tag'),
     path('project/<slug:project_slug>/remove-tag/', csrf_exempt(views.remove_tag_from_project), name= 'project-remove-tag'),
+    path('project-id/<int:id>/delete/', csrf_exempt(views.delete_project_by_id), name='blog-project-by-id-delete'),
   
     path('tags/', views.tags, name='portfolio-tags-index'),
   
@@ -37,6 +38,7 @@ urlpatterns = [
   
     path('tag/<slug:slug>/delete/', csrf_exempt(views.delete_tag), name='portfolio-tag-delete'),
     path('tags/<slug:slug>/delete/', csrf_exempt(views.delete_tag), name='portfolio-tags-delete'),
+    path('tag-id/<int:id>/delete/', csrf_exempt(views.delete_tag_by_id), name='blog-tag-by-id-delete'),
 
     path('images/', views.images, name='portfolio-images-index'),
     path('uploads/', include('uploads.urls'))

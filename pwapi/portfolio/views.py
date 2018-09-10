@@ -2,7 +2,7 @@ from django.shortcuts import render
 from django.http import HttpRequest, HttpResponse, JsonResponse
 from portfolio.models import Tag, Image, Project
 from pwapi.helpers.crud_instance import index_response, get_instance, new_instance, edit_instance, delete_instance, add_child_to, remove_child_from
-from pwapi.helpers.general import unmodified, remove_hidden_func
+from pwapi.helpers.general import unmodified
 
 from people.views import check_api_key
 
@@ -34,14 +34,8 @@ def projects(request):
         'is_hidden'
     ] # Add: cover_photo_id
     
-    
-    modify_each_with = remove_hidden_func("is_hidden")
-    api_key = bleach.clean(request.GET.get("api_key", ""))
-    if api_key and check_api_key(api_key):
-        modify_each_with = unmodified
-    
     order_by = '-sort_date'
-    return index_response(request, Project, index_fields, order_by, modify_each_with=modify_each_with)
+    return index_response(request, Project, index_fields, order_by, hide_except_admin_field="is_hidden")
 
 
   
@@ -71,6 +65,8 @@ def edit_project(request, slug):
   
 def delete_project(request, slug):
     return delete_instance(request, Project, "slug", slug)
+def delete_project_by_id(request, id):
+    return delete_instance(request, Project, "id", id)
     
 
 #  --- --- --- --- --- --- #
@@ -96,6 +92,8 @@ def edit_tag(request, slug):
   
 def delete_tag(request, slug):
     return delete_instance(request, Tag, "slug", slug)
+def delete_tag_by_id(request, id):
+    return delete_instance(request, Tag, "id", id)
 
 
 #  --- --- --- --- --- --- #
