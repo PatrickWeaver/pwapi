@@ -135,12 +135,16 @@ def edit_instance(request, model, slug, required_fields, allowed_fields):
     instance = find_single_instance_from(model, "slug", slug)
     if not instance:
         return error("Can't find in db.")
-
-    updated_instance = update_instance_using_dict(instance, request_dict)
-    if not updated_instance:
-        return error("Error saving updated object")
     
-    updated_instance_dict = dict_from_single_object(updated_instance, allowed_fields)
+    
+    primary_key_field = model._meta.pk.name
+    request_dict[primary_key_field] = instance.pk
+    
+    object_instance = object_instance_from(model, request_dict)
+    if not object_instance:
+        return error("Error saving object")
+    
+    updated_instance_dict = dict_from_single_object(object_instance, allowed_fields)
     if not updated_instance_dict:
         return error("Error generating response")
       
@@ -243,7 +247,6 @@ def parse_non_text_field(field_type, value):
             return error('Boolean field not true or false')
     else:
       return value
-  
 
   
 def object_instance_from(model, instance_dict):
@@ -256,21 +259,7 @@ def object_instance_from(model, instance_dict):
         print(sys.exc_info())
         return False
 
-    
-def update_instance_using_dict(instance, instance_dict):
-    for key, value in instance_dict.items():
-        if hasattr(instance, key):
-            setattr(instance, key, value)
-        else:
-            print('Instance does not have attribute ' + key)
-    try:
-        instance.save()
-        return instance
-    except:
-        print("Error: Can't save updated object.")
-        print(sys.exc_info())
-        return False
-
+      
 def add_child_to(request, parent_model, child_model, parent_key, parent_identifier_value):
     def get_modify_with(parent_instance, child_model_name):
       return getattr(parent_instance, child_model_name).add
