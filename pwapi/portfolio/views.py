@@ -14,7 +14,7 @@ import bleach
 errorJSON = [{'Error': 'No data for that request.'}]
 
 def index(request):
-    return HttpResponse('Portfolio')
+    return HttpResponse('<h1>Portfolio</h1><ul><li><a href="projects">Projects</a></li><li><a href="tags">Tags</a></li></ul>')
 
   
 #  --- --- --- --- --- --- #

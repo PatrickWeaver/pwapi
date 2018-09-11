@@ -29,7 +29,7 @@ default = {
 def get_model_name(model):
     return str(model.__name__).lower() + 's'
 
-def index_response(request, model, index_fields, order_by, modify_each_with=unmodified, hide_except_admin_field=False):
+def index_response(request, model, index_fields, order_by, modify_each_with=unmodified, hide_except_admin_field=None):
     log('get', model, 'all')
   
     # Pagination
@@ -46,7 +46,6 @@ def index_response(request, model, index_fields, order_by, modify_each_with=unmo
     model_name = get_model_name(model)
     
     all_instances = model.objects.all()
-    number_of = all_instances.count()
     ordered_instances = all_instances.order_by(order_by)[start_of_page:end_of_page].values(*index_fields)
     index_list = []
     
@@ -60,6 +59,8 @@ def index_response(request, model, index_fields, order_by, modify_each_with=unmo
         admin_sanitized_i = admin_sanitizer(modified_i)
         if admin_sanitized_i:
             index_list.append(admin_sanitized_i)
+    
+    number_of = len(index_list)
     
     response = {
         'total_' + model_name:   number_of,
@@ -97,13 +98,22 @@ def get_instance(request, model, slug, allowed_fields, modify_with=unmodified):
       
     instance = find_single_instance_from(model, "slug", slug)
     if not instance:
-        return error("Can\'t find in db.")
+        return error("Can't find in db.")
       
     sanitized_instance_dict = dict_from_single_object(instance, allowed_fields)
       
     modified_instance_dict = modify_with(sanitized_instance_dict)
     
-    return JsonResponse(modified_instance_dict, safe=False)
+    api_key = bleach.clean(request.GET.get("api_key", ""))
+    admin_sanitizer = remove_hidden_func(hide_except_admin_field)
+    if api_key and check_api_key(api_key):
+        admin_sanitizer = unmodified
+    admin_sanitized_instance_dict = admin_sanitizer(modified_instance_dict)
+    
+    if admin_sanitized_instance_dict:
+        return JsonResponse(admin_sanitized_instance_dict, safe=False)
+    else:
+        return error("Can't find in db.")
 
   
 # POST Requests:
