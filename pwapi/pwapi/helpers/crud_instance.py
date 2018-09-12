@@ -28,6 +28,24 @@ default = {
 
 def get_model_name(model):
     return str(model.__name__).lower() + 's'
+  
+def error(message):
+    # General error message for invalid requests:
+    errorJSON = [{'Error': 'No data for that request. ' + message}]
+    return JsonResponse(errorJSON, safe=False)
+  
+def log(req_type, model, slug=""):
+    print(req_type, get_model_name(model), ':', slug)
+
+def check_method_type(request, type):
+    print("Required:", request.method)
+    print("Actual:", type)
+    if request.method == type:
+        return True
+    return False
+  
+def invalid_method(type):
+    return error("- Only " + type  + " requests are allowed at this endpoint.")
 
 def index_response(request, model, index_fields, order_by, related_fields=[], modify_each_with=unmodified, hide_except_admin_field=None):
     log('get', model, 'all')
@@ -48,15 +66,29 @@ def index_response(request, model, index_fields, order_by, related_fields=[], mo
     ordered_instance_objects = all_instances.order_by(order_by)[start_of_page:end_of_page]    
     
     index_list = []
-    for i in ordered_instance_objects:
-        d = model_to_dict(i)
-        for j in related_fields:
-            related_instances = []
-            for k in d[j["field_name"]]:
-                related_instances.append(model_to_dict(k))
-            d[j["field_name"]] = related_instances
+    
+    def get_related_objects(instance):
+        instance_dict = model_to_dict(instance)
         
-        index_list.append(d)
+        keys = list(map(
+            lambda rf: rf["field_name"], related_fields
+        ))
+        
+        def related_field_to_dict(rf):
+            return list(map(model_to_dict, instance_dict[rf["field_name"]]))
+          
+        values = list(map(
+          related_field_to_dict,
+          related_fields
+        ))
+        
+        related_dict = dict(zip(keys, values))
+        return {**instance_dict, **related_dict}
+        
+    index_list = list(map(
+        get_related_objects,
+        ordered_instance_objects
+    ))
     
     api_key = bleach.clean(request.GET.get("api_key", ""))
     admin_sanitizer = remove_hidden_func(hide_except_admin_field)
@@ -65,10 +97,14 @@ def index_response(request, model, index_fields, order_by, related_fields=[], mo
 
     s_index_list = []
     for i in index_list:
+        print("##", i)
         modified_i = modify_each_with(i)
-        admin_sanitized_i = admin_sanitizer(modified_i)
-        if admin_sanitized_i:
-            s_index_list.append(admin_sanitized_i)
+        if hide_except_admin_field:
+          if hide_except_admin_field not in modified_i: 
+              return error("Admin only eval field passed, but does not exist.")
+          modified_i = admin_sanitizer(modified_i)
+        if modified_i:
+            s_index_list.append(modified_i)
     
     number_of = len(s_index_list)
     
@@ -81,23 +117,7 @@ def index_response(request, model, index_fields, order_by, related_fields=[], mo
     # on safe=False: https://stackoverflow.com/questions/28740338/creating-json-array-in-django
     return JsonResponse(response, safe=False)
 
-def error(message):
-    # General error message for invalid requests:
-    errorJSON = [{'Error': 'No data for that request. ' + message}]
-    return JsonResponse(errorJSON, safe=False)
-  
-def log(req_type, model, slug=""):
-    print(req_type, get_model_name(model), ':', slug)
 
-def check_method_type(request, type):
-    print("Required:", request.method)
-    print("Actual:", type)
-    if request.method == type:
-        return True
-    return False
-  
-def invalid_method(type):
-    return error("- Only " + type  + " requests are allowed at this endpoint.")
     
 # GET Requests:
 def get_instance(request, model, slug, allowed_fields, modify_with=unmodified, hide_except_admin_field=None):
