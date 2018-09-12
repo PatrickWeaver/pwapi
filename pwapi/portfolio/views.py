@@ -1,7 +1,8 @@
 from django.shortcuts import render
 from django.http import HttpRequest, HttpResponse, JsonResponse
 from portfolio.models import Tag, Image, Project
-from pwapi.helpers.crud_instance import index_response, get_instance, new_instance, edit_instance, delete_instance, add_child_to, remove_child_from
+from pwapi.helpers.crud_instance import index_response, get_instance, new_instance, edit_instance, delete_instance
+from pwapi.helpers.related_instances import add_child_to, remove_child_from
 from pwapi.helpers.general import unmodified
 
 from people.views import check_api_key
@@ -12,6 +13,14 @@ import bleach
 
 # General error message for invalid requests:
 errorJSON = [{'Error': 'No data for that request.'}]
+
+project_related_fields = [
+    {
+        "field_name": "tags",
+        "related_name": "project_tags"
+    }
+]
+
 
 def index(request):
     return HttpResponse('<h1>Portfolio</h1><ul><li><a href="projects">Projects</a></li><li><a href="tags">Tags</a></li></ul>')
@@ -36,15 +45,8 @@ def projects(request):
       
     ] # Add: cover_photo_id
     
-    index_related_fields = [
-        {
-            "field_name": "tags",
-            "related_name": "project_tags"
-        }
-    ]
-    
     order_by = '-sort_date'
-    return index_response(request, Project, index_fields, order_by, related_fields=index_related_fields, hide_except_admin_field="is_hidden")
+    return index_response(request, Project, index_fields, order_by, related_fields=project_related_fields, hide_except_admin_field="is_hidden")
 
 
   
@@ -60,11 +62,12 @@ project_allowed_fields = [
     'sort_date',
     'project_url',
     'source_url',
-    'is_hidden'
+    'is_hidden',
+    'tags' # Find a way to add all project_related_fields
 ] + project_required_fields
 
 def get_project(request, slug):
-    return get_instance(request, Project, slug, project_allowed_fields, hide_except_admin_field="is_hidden")
+    return get_instance(request, Project, slug, project_allowed_fields, related_fields=project_related_fields, hide_except_admin_field="is_hidden")
 
 def new_project(request):
     return new_instance(request, Project, project_required_fields, project_allowed_fields)

@@ -45,7 +45,7 @@ def posts(request):
     ]
     order_by = '-post_date'
     modify_each_with = expand_preview_post
-    return index_response(request, Post, index_fields, order_by, modify_each_with, hide_except_admin_field="draft");
+    return index_response(request, Post, index_fields, order_by, modify_each_with=modify_each_with, hide_except_admin_field="draft");
   
 post_required_fields = ['body']
 post_allowed_fields = [

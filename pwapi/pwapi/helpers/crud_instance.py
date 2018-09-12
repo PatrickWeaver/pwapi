@@ -1,12 +1,16 @@
 import sys
 
+from functools import partial
+
 from django.shortcuts import render
 from django.http import HttpRequest, HttpResponse, JsonResponse
 from django.forms.models import model_to_dict
 
 from people.views import check_api_key
 
-from . general import unmodified, remove_hidden_func
+from . general import unmodified, remove_hidden_func, get_model_name, validate_body, log_request
+from . responses import error
+from . db import find_single_instance, save_object_instance
 
 # https://docs.python.org/3/library/json.html
 import json
@@ -26,16 +30,6 @@ default = {
     'quantity': 5
 }
 
-def get_model_name(model):
-    return str(model.__name__).lower() + 's'
-  
-def error(message):
-    # General error message for invalid requests:
-    errorJSON = [{'Error': 'No data for that request. ' + message}]
-    return JsonResponse(errorJSON, safe=False)
-  
-def log(req_type, model, slug=""):
-    print(req_type, get_model_name(model), ':', slug)
 
 def check_method_type(request, type):
     print("Required:", request.method)
@@ -48,7 +42,7 @@ def invalid_method(type):
     return error("- Only " + type  + " requests are allowed at this endpoint.")
 
 def index_response(request, model, index_fields, order_by, related_fields=[], modify_each_with=unmodified, hide_except_admin_field=None):
-    log('get', model, 'all')
+    log_request('get', model, 'all')
     # Pagination
     # Try/except will deal with any non integer values
     try:
@@ -60,6 +54,11 @@ def index_response(request, model, index_fields, order_by, related_fields=[], mo
     end_of_page = page * quantity
     start_of_page = end_of_page - quantity
     
+    api_key = bleach.clean(request.GET.get("api_key", ""))
+    admin_sanitizer = remove_hidden_func(hide_except_admin_field)
+    if api_key and check_api_key(api_key):
+        admin_sanitizer = unmodified
+    
     model_name = get_model_name(model)
     
     all_instances = model.objects.all()
@@ -67,50 +66,37 @@ def index_response(request, model, index_fields, order_by, related_fields=[], mo
     
     index_list = []
     
-    def get_related_objects(instance):
-        instance_dict = model_to_dict(instance)
-        
-        keys = list(map(
-            lambda rf: rf["field_name"], related_fields
-        ))
-        
-        def related_field_to_dict(rf):
-            return list(map(model_to_dict, instance_dict[rf["field_name"]]))
-          
-        values = list(map(
-          related_field_to_dict,
-          related_fields
-        ))
-        
-        related_dict = dict(zip(keys, values))
-        return {**instance_dict, **related_dict}
-        
+    # Add related objects as dictionaries
+    # Passed to parent function in related_fields
+    get_related_objects_from = partial(get_related_objects, related_fields)
+    
     index_list = list(map(
-        get_related_objects,
+        get_related_objects_from,
         ordered_instance_objects
     ))
     
-    api_key = bleach.clean(request.GET.get("api_key", ""))
-    admin_sanitizer = remove_hidden_func(hide_except_admin_field)
-    if api_key and check_api_key(api_key):
-        admin_sanitizer = unmodified
-
-    s_index_list = []
-    for i in index_list:
-        modified_i = modify_each_with(i)
+    # Perform any mutations, and remove hidden unless admin
+    def modify_each_instance(instance):
+        instance = modify_each_with(instance)
         if hide_except_admin_field:
-          if hide_except_admin_field not in modified_i: 
-              return error("Admin only eval field passed, but does not exist.")
-          modified_i = admin_sanitizer(modified_i)
-        if modified_i:
-            s_index_list.append(modified_i)
+          if hide_except_admin_field not in instance: 
+              return error("Internal error: Admin only eval field passed, but does not exist.")
+          instance = admin_sanitizer(instance)
+        return instance
     
-    number_of = len(s_index_list)
+    modified_index_list = list(map(
+        modify_each_instance,
+        index_list
+    ))
+    
+    # Remove None items from list that were removed from admin_sanitizer()
+    modified_index_list = list(filter((None).__ne__, modified_index_list))
+    number_of = len(modified_index_list)
     
     response = {
         'total_' + model_name:   number_of,
         'page':                        page,
-        model_name + '_list':          s_index_list
+        model_name + '_list':          modified_index_list
     } 
     
     # on safe=False: https://stackoverflow.com/questions/28740338/creating-json-array-in-django
@@ -118,20 +104,22 @@ def index_response(request, model, index_fields, order_by, related_fields=[], mo
 
 
     
-# GET Requests:
-def get_instance(request, model, slug, allowed_fields, modify_with=unmodified, hide_except_admin_field=None):
-    slug = slug.lower()
-    log('get', model, slug)
+# Get an existing instance:
+def get_instance(request, model, slug, allowed_fields, related_fields=[], modify_with=unmodified, hide_except_admin_field=None):
+    log_request('get', model, slug)
     
     required_method_type = "GET"
     if not check_method_type(request, required_method_type):
         return invalid_method(required_method_type)
       
-    instance = find_single_instance_from(model, "slug", slug)
+    instance = find_single_instance(model, "slug", slug)
     if not instance:
         return error("Can't find in db.")
-      
-    sanitized_instance_dict = dict_from_single_object(instance, allowed_fields)
+    
+    print("((", instance)
+    print(type(instance))
+    #sanitized_instance_dict = dict_from_single_object(instance, allowed_fields)
+    sanitized_instance_dict = get_related_objects(related_fields, instance, allowed_fields)
       
     modified_instance_dict = modify_with(sanitized_instance_dict)
     
@@ -147,9 +135,9 @@ def get_instance(request, model, slug, allowed_fields, modify_with=unmodified, h
         return error("Can't find in db.")
 
   
-# POST Requests:
+# Create a new instance:
 def new_instance(request, model, required_fields, allowed_fields):
-    log("new", model)
+    log_request("new", model)
     
     required_method_type = "POST"
     if not check_method_type(request, required_method_type):
@@ -159,7 +147,7 @@ def new_instance(request, model, required_fields, allowed_fields):
     if not request_dict:
         return error("No body in request or incorrect fields")
       
-    object_instance = object_instance_from(model, request_dict)
+    object_instance = save_object_instance(model, request_dict)
     if not object_instance:
         return error("Error saving object")
     
@@ -168,9 +156,9 @@ def new_instance(request, model, required_fields, allowed_fields):
     instance_dict["success"] = True
     return JsonResponse(instance_dict, safe=False)
   
-# PUT Requests:
+# Edit an existing instance
 def edit_instance(request, model, slug, required_fields, allowed_fields):
-    log("edit", model, slug)
+    log_request("edit", model, slug)
     
     required_method_type = "POST"
     if not check_method_type(request, required_method_type):
@@ -180,7 +168,7 @@ def edit_instance(request, model, slug, required_fields, allowed_fields):
     if not request_dict:
           return error("No body in request or incorrect fields")
       
-    instance = find_single_instance_from(model, "slug", slug)
+    instance = find_single_instance(model, "slug", slug)
     if not instance:
         return error("Can't find in db.")
     
@@ -188,7 +176,7 @@ def edit_instance(request, model, slug, required_fields, allowed_fields):
     primary_key_field = model._meta.pk.name
     request_dict[primary_key_field] = instance.pk
     
-    object_instance = object_instance_from(model, request_dict)
+    object_instance = save_object_instance(model, request_dict)
     if not object_instance:
         return error("Error saving object")
     
@@ -200,9 +188,9 @@ def edit_instance(request, model, slug, required_fields, allowed_fields):
     print(updated_instance_dict)
     return JsonResponse(updated_instance_dict, safe=False)
     
-# DELETE Requests:
+# Delete an existing instance
 def delete_instance(request, model, key, value):
-    log("delete by", model, value)
+    log_request("delete by", model, value)
     
     required_method_type = "POST"
     if not check_method_type(request, required_method_type):
@@ -212,23 +200,15 @@ def delete_instance(request, model, key, value):
     if not instance_dict:
         return error("No body in request or incorrect API key")
       
-    instance = find_single_instance_from(model, key, value)
+    instance = find_single_instance(model, key, value)
     if not instance:
         return error("Can't find in db.")
     instance.delete()
     
     return JsonResponse({'success': True})
 
-def find_single_instance_from(model, lookup_key, lookup_value):
-    try:
-        filter_dict = {lookup_key: lookup_value}
-        instance = model.objects.get(**filter_dict)
-        return instance
-    except:
-        print("ERROR:")
-        print(sys.exc_info())
-        return False
-
+  
+  
 def dict_from_single_object(instance, allowed_fields):
     try:
         instance_dict = instance.__dict__
@@ -238,17 +218,6 @@ def dict_from_single_object(instance, allowed_fields):
         print("ERROR:")
         print(sys.exc_info())
         return False
-      
-def validate_body(request):
-    if not request.body:
-        return False
-    parsed_body = json.loads(request.body.decode("utf-8"))
-    if "api_key" not in parsed_body:
-        return False
-    api_key_valid = check_api_key(bleach.clean(parsed_body["api_key"]))
-    if not api_key_valid:
-        return False
-    return parsed_body
       
 def check_for_required_and_allowed_fields(request, model, required_fields = [], allowed_fields = ["api_key"]):
     parsed_body = validate_body(request)
@@ -296,59 +265,32 @@ def parse_non_text_field(field_type, value):
     else:
       return value
 
+# Add related objects as dictionaries
+# Passed to parent function in related_fields
+def get_related_objects(related_fields, instance, allowed_fields = False):
+    instance_dict = model_to_dict(instance)
+    
+    if allowed_fields:
+        instance_dict = remove_non_allowed_fields(instance_dict, allowed_fields)
+    
+    related_keys = list(map(
+        lambda rf: rf["field_name"],
+        related_fields
+    ))
 
-def object_instance_from(model, instance_dict):
-    object_instance = model(**instance_dict)
-    try:
-        object_instance.save()
-        return object_instance
-    except:
-        print("ERROR: Can't create object.")
-        print(sys.exc_info())
-        return False
-
+    def related_field_to_dict(rf):
       
-def add_child_to(request, parent_model, child_model, parent_key, parent_identifier_value):
-    def get_modify_with(parent_instance, child_model_name):
-      return getattr(parent_instance, child_model_name).add
-    return modify_child_on(request, parent_model, child_model, parent_key, parent_identifier_value, get_modify_with)
-  
-def remove_child_from(request, parent_model, child_model, parent_key, parent_identifier_value):
-    def get_modify_with(parent_instance, child_model_name):
-      return getattr(parent_instance, child_model_name).remove
-    return modify_child_on(request, parent_model, child_model, parent_key, parent_identifier_value, get_modify_with)
-    
-    
-def modify_child_on(request, parent_model, child_model, parent_key, parent_identifier_value, get_modify_with):
-    child_model_name = get_model_name(child_model)
-    parsed_body = validate_body(request)
-            
-    parent_instance = find_single_instance_from(parent_model, parent_key, parent_identifier_value)
-    if not parent_instance:
-        return errror(parent_model__name__ + " not found")
+        print("^^", instance)
       
-    try:
-        child_identifier = parsed_body["identifier"]
-        child_identifier_value = parsed_body["value"]
-    except:
-        return error('No identifier provided')
+        return list(map(
+            model_to_dict,
+            instance_dict[rf["field_name"]]
+        ))
 
-    try:
-        child_instance = find_single_instance_from(child_model, child_identifier, child_identifier_value)
-        modify_with = get_modify_with(parent_instance, child_model_name)
-        modify_with(child_instance)
-    except:
-        print(sys.exc_info())
-        return error('Error adding or removing child')
-    
-    # Should generalize this:
-    updated_parent_instance_dict = model_to_dict(parent_instance)
-    if not updated_parent_instance_dict:
-        return error('Error generating response')
-    children_dicts = []
-    for child in updated_parent_instance_dict[child_model_name]:
-        children_dicts.append(model_to_dict(child))
-    updated_parent_instance_dict[child_model_name] = children_dicts
-    updated_parent_instance_dict['success'] = True
-    print(updated_parent_instance_dict)
-    return JsonResponse(updated_parent_instance_dict, safe=False)
+    related_values = list(map(
+      related_field_to_dict,
+      related_fields
+    ))
+
+    related_dict = dict(zip(related_keys, related_values))
+    return {**instance_dict, **related_dict}

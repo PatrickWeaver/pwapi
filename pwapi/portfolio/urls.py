@@ -5,7 +5,10 @@ from . import views
 from uploads import views as UploadsViews
 
 urlpatterns = [
+  
     path('', views.index, name='index'),
+  
+    # Projects
     path('projects/', views.projects, name='portfolio-projects-index'),
   
     path('project/new/', csrf_exempt(views.new_project), name='portfolio-project-new'),
@@ -25,6 +28,7 @@ urlpatterns = [
     path('project/<slug:project_slug>/remove-tag/', csrf_exempt(views.remove_tag_from_project), name= 'project-remove-tag'),
     path('project-id/<int:id>/delete/', csrf_exempt(views.delete_project_by_id), name='blog-project-by-id-delete'),
   
+    # Tags
     path('tags/', views.tags, name='portfolio-tags-index'),
   
     path('tag/new/', csrf_exempt(views.new_tag), name='portfolio-tag-new'),
