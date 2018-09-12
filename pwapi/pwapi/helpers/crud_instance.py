@@ -97,7 +97,6 @@ def index_response(request, model, index_fields, order_by, related_fields=[], mo
 
     s_index_list = []
     for i in index_list:
-        print("##", i)
         modified_i = modify_each_with(i)
         if hide_except_admin_field:
           if hide_except_admin_field not in modified_i: 
@@ -111,7 +110,7 @@ def index_response(request, model, index_fields, order_by, related_fields=[], mo
     response = {
         'total_' + model_name:   number_of,
         'page':                        page,
-        model_name + '_list':          index_list
+        model_name + '_list':          s_index_list
     } 
     
     # on safe=False: https://stackoverflow.com/questions/28740338/creating-json-array-in-django
