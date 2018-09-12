@@ -16,6 +16,9 @@ def create_slug(text, slug, model, id):
   
 def sanitize_for_url(slug):
     sanitized_slug = re.sub(r"[\W_]", "-", slug)
+    sanitized_slug = re.sub(r"--", "-", sanitized_slug)
     if sanitized_slug.endswith("-"):
-      sanitized_slug = sanitized_slug[:-1]
+      sanitized_slug = sanitized_slug[:-1].lower()
+    if "--" in sanitized_slug:
+        return sanitize_for_url(sanitized_slug)
     return sanitized_slug

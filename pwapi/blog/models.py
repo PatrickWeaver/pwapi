@@ -9,6 +9,7 @@ class Post(models.Model):
     body = models.TextField()
     post_date = models.DateTimeField(default=timezone.now, blank=True)
     created_date = models.DateTimeField(default=timezone.now, blank=True)
+    draft = models.BooleanField(default=False, blank=True)
 
     def save(self, *args, **kwargs):
         slug_text = self.body

@@ -31,11 +31,20 @@ def projects(request):
         'sort_date',
         'project_url',
         'status_id',
-        'is_hidden'
+        'is_hidden',
+        'tags'
+      
     ] # Add: cover_photo_id
     
+    index_related_fields = [
+        {
+            "field_name": "tags",
+            "related_name": "project_tags"
+        }
+    ]
+    
     order_by = '-sort_date'
-    return index_response(request, Project, index_fields, order_by, hide_except_admin_field="is_hidden")
+    return index_response(request, Project, index_fields, order_by, related_fields=index_related_fields, hide_except_admin_field="is_hidden")
 
 
   
@@ -55,7 +64,7 @@ project_allowed_fields = [
 ] + project_required_fields
 
 def get_project(request, slug):
-    return get_instance(request, Project, slug, project_allowed_fields)
+    return get_instance(request, Project, slug, project_allowed_fields, hide_except_admin_field="is_hidden")
 
 def new_project(request):
     return new_instance(request, Project, project_required_fields, project_allowed_fields)

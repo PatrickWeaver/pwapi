@@ -29,9 +29,8 @@ default = {
 def get_model_name(model):
     return str(model.__name__).lower() + 's'
 
-def index_response(request, model, index_fields, order_by, modify_each_with=unmodified, hide_except_admin_field=None):
+def index_response(request, model, index_fields, order_by, related_fields=[], modify_each_with=unmodified, hide_except_admin_field=None):
     log('get', model, 'all')
-  
     # Pagination
     # Try/except will deal with any non integer values
     try:
@@ -46,27 +45,39 @@ def index_response(request, model, index_fields, order_by, modify_each_with=unmo
     model_name = get_model_name(model)
     
     all_instances = model.objects.all()
-    ordered_instances = all_instances.order_by(order_by)[start_of_page:end_of_page].values(*index_fields)
+    ordered_instance_objects = all_instances.order_by(order_by)[start_of_page:end_of_page]    
+    
     index_list = []
+    for i in ordered_instance_objects:
+        d = model_to_dict(i)
+        for j in related_fields:
+            related_instances = []
+            for k in d[j["field_name"]]:
+                related_instances.append(model_to_dict(k))
+            d[j["field_name"]] = related_instances
+        
+        index_list.append(d)
     
     api_key = bleach.clean(request.GET.get("api_key", ""))
     admin_sanitizer = remove_hidden_func(hide_except_admin_field)
     if api_key and check_api_key(api_key):
         admin_sanitizer = unmodified
 
-    for i in ordered_instances:
+    s_index_list = []
+    for i in index_list:
         modified_i = modify_each_with(i)
         admin_sanitized_i = admin_sanitizer(modified_i)
         if admin_sanitized_i:
-            index_list.append(admin_sanitized_i)
+            s_index_list.append(admin_sanitized_i)
     
-    number_of = len(index_list)
+    number_of = len(s_index_list)
     
     response = {
         'total_' + model_name:   number_of,
         'page':                        page,
         model_name + '_list':          index_list
-    }
+    } 
+    
     # on safe=False: https://stackoverflow.com/questions/28740338/creating-json-array-in-django
     return JsonResponse(response, safe=False)
 
@@ -89,7 +100,8 @@ def invalid_method(type):
     return error("- Only " + type  + " requests are allowed at this endpoint.")
     
 # GET Requests:
-def get_instance(request, model, slug, allowed_fields, modify_with=unmodified):
+def get_instance(request, model, slug, allowed_fields, modify_with=unmodified, hide_except_admin_field=None):
+    slug = slug.lower()
     log('get', model, slug)
     
     required_method_type = "GET"
