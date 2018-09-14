@@ -39,6 +39,7 @@ class Project(models.Model):
     is_hidden = models.BooleanField(default=False, blank=False)
     created_date = models.DateTimeField(default=timezone.now, blank=True)
 
+    hide_if = "is_hidden"
 
     def save(self, *args, **kwargs):
         self.slug = create_slug(self.name, self.slug, Project, self.id)

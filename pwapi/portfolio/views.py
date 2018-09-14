@@ -46,7 +46,7 @@ def projects(request):
     ] # Add: cover_photo_id
     
     order_by = '-sort_date'
-    return index_response(request, Project, index_fields, order_by, related_fields=project_related_fields, hide_except_admin_field="is_hidden")
+    return index_response(request, Project, index_fields, order_by, related_fields=project_related_fields)
 
 
   
@@ -67,7 +67,7 @@ project_allowed_fields = [
 ] + project_required_fields
 
 def get_project(request, slug):
-    return get_instance(request, Project, slug, project_allowed_fields, related_fields=project_related_fields, hide_except_admin_field="is_hidden")
+    return get_instance(request, Project, slug, project_allowed_fields, related_fields=project_related_fields)
 
 def new_project(request):
     return new_instance(request, Project, project_required_fields, project_allowed_fields)

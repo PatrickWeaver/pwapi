@@ -10,6 +10,8 @@ class Post(models.Model):
     post_date = models.DateTimeField(default=timezone.now, blank=True)
     created_date = models.DateTimeField(default=timezone.now, blank=True)
     draft = models.BooleanField(default=False, blank=True)
+    
+    hide_if = "draft"
 
     def save(self, *args, **kwargs):
         slug_text = self.body

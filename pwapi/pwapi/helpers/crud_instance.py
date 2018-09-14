@@ -41,7 +41,7 @@ def check_method_type(request, type):
 def invalid_method(type):
     return error("- Only " + type  + " requests are allowed at this endpoint.")
 
-def index_response(request, model, index_fields, order_by, related_fields=[], modify_each_with=unmodified, hide_except_admin_field=None):
+def index_response(request, model, index_fields, order_by, related_fields=[], modify_each_with=unmodified):
     log_request('get', model, 'all')
     # Pagination
     # Try/except will deal with any non integer values
@@ -54,10 +54,7 @@ def index_response(request, model, index_fields, order_by, related_fields=[], mo
     end_of_page = page * quantity
     start_of_page = end_of_page - quantity
     
-    api_key = bleach.clean(request.GET.get("api_key", ""))
-    admin_sanitizer = remove_hidden_func(hide_except_admin_field)
-    if api_key and check_api_key(api_key):
-        admin_sanitizer = unmodified
+    admin_sanitizer = check_api_key_and_create_sanitizer(request, model)
     
     model_name = get_model_name(model)
     
@@ -78,8 +75,8 @@ def index_response(request, model, index_fields, order_by, related_fields=[], mo
     # Perform any mutations, and remove hidden unless admin
     def modify_each_instance(instance):
         instance = modify_each_with(instance)
-        if hide_except_admin_field:
-          if hide_except_admin_field not in instance: 
+        if hasattr(model, "hide_if"):
+          if model.hide_if not in instance: 
               return error("Internal error: Admin only eval field passed, but does not exist.")
           instance = admin_sanitizer(instance)
         return instance
@@ -105,7 +102,7 @@ def index_response(request, model, index_fields, order_by, related_fields=[], mo
 
     
 # Get an existing instance:
-def get_instance(request, model, slug, allowed_fields, related_fields=[], modify_with=unmodified, hide_except_admin_field=None):
+def get_instance(request, model, slug, allowed_fields, related_fields=[], modify_with=unmodified):
     log_request('get', model, slug)
     
     required_method_type = "GET"
@@ -115,18 +112,13 @@ def get_instance(request, model, slug, allowed_fields, related_fields=[], modify
     instance = find_single_instance(model, "slug", slug)
     if not instance:
         return error("Can't find in db.")
-    
-    print("((", instance)
-    print(type(instance))
-    #sanitized_instance_dict = dict_from_single_object(instance, allowed_fields)
+
     sanitized_instance_dict = get_related_objects(related_fields, instance, allowed_fields)
       
     modified_instance_dict = modify_with(sanitized_instance_dict)
     
-    api_key = bleach.clean(request.GET.get("api_key", ""))
-    admin_sanitizer = remove_hidden_func(hide_except_admin_field)
-    if api_key and check_api_key(api_key):
-        admin_sanitizer = unmodified
+    admin_sanitizer = check_api_key_and_create_sanitizer(request, model)       
+        
     admin_sanitized_instance_dict = admin_sanitizer(modified_instance_dict)
     
     if admin_sanitized_instance_dict:
@@ -207,7 +199,12 @@ def delete_instance(request, model, key, value):
     
     return JsonResponse({'success': True})
 
-  
+def check_api_key_and_create_sanitizer(request, model):
+    api_key = bleach.clean(request.GET.get("api_key", ""))
+    if (api_key != "" and check_api_key(api_key)) or not hasattr(model, "hide_if"):
+        return unmodified
+    else:
+        return remove_hidden_func(model.hide_if)
   
 def dict_from_single_object(instance, allowed_fields):
     try:
