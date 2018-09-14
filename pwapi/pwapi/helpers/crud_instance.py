@@ -42,7 +42,10 @@ def invalid_method(type):
     return error("- Only " + type  + " requests are allowed at this endpoint.")
 
 def index_response(request, model, index_fields, order_by, related_fields=[], modify_each_with=unmodified):
+  
+    # Log the request
     log_request('get', model, 'all')
+    
     # Pagination
     # Try/except will deal with any non integer values
     try:
@@ -54,46 +57,34 @@ def index_response(request, model, index_fields, order_by, related_fields=[], mo
     end_of_page = page * quantity
     start_of_page = end_of_page - quantity
     
+    
+    # Create admin sanitizer function to remove hidden instances
     admin_sanitizer = check_api_key_and_create_sanitizer(request, model)
+       
     
-    model_name = get_model_name(model)
+    #all_instances = model.objects.all()
+    #ordered_instance_objects = all_instances.order_by(order_by)[start_of_page:end_of_page] 
     
-    all_instances = model.objects.all()
-    ordered_instance_objects = all_instances.order_by(order_by)[start_of_page:end_of_page]    
+    # Get all instances from DB
+    ordered_instance_objects_qs = model.objects.all().order_by(order_by)[start_of_page:end_of_page] 
     
-    index_list = []
-    
-    # Add related objects as dictionaries
-    # Passed to parent function in related_fields
-    get_related_objects_from = partial(get_related_objects, related_fields)
-    
+    on_each_instance = partial(single_instance_to_dict, request, model, index_fields, related_fields, modify_each_with)
     index_list = list(map(
-        get_related_objects_from,
-        ordered_instance_objects
-    ))
-    
-    # Perform any mutations, and remove hidden unless admin
-    def modify_each_instance(instance):
-        instance = modify_each_with(instance)
-        if hasattr(model, "hide_if"):
-          if model.hide_if not in instance: 
-              return error("Internal error: Admin only eval field passed, but does not exist.")
-          instance = admin_sanitizer(instance)
-        return instance
-    
-    modified_index_list = list(map(
-        modify_each_instance,
-        index_list
+        on_each_instance,
+        ordered_instance_objects_qs
     ))
     
     # Remove None items from list that were removed from admin_sanitizer()
-    modified_index_list = list(filter((None).__ne__, modified_index_list))
-    number_of = len(modified_index_list)
+    index_list = list(filter((None).__ne__, index_list))
+    number_of = len(index_list)
     
+    
+    # Create response dict
+    model_name = get_model_name(model)
     response = {
         'total_' + model_name:   number_of,
         'page':                        page,
-        model_name + '_list':          modified_index_list
+        model_name + '_list':          index_list
     } 
     
     # on safe=False: https://stackoverflow.com/questions/28740338/creating-json-array-in-django
@@ -114,35 +105,45 @@ def get_instance(request, model, slug, allowed_fields, related_fields=[], modify
       
     # Get single queryset from db else return error
     instance = find_single_instance(model, "slug", slug)
-    if not instance:
-        return error("Can't find in db.")
-
-    
-    # Get dict without related objects
-    instance_dict = instance.__dict__
-    
-    # Create sanitizer for model, and return error if hidden and no api_key
-    admin_sanitizer = check_api_key_and_create_sanitizer(request, model)       
-    instance_dict = admin_sanitizer(instance_dict)
-    
-    if not instance_dict:
-        return error("Can't find in db.")
-        
-    # Remove non-allowed fields from instance_dict
-    instance_dict = remove_non_allowed_fields(instance_dict, allowed_fields)
-    
-    # Modify instance dict
-    instance_dict = modify_with(instance_dict)
-    
-    
-    # Get dict of only related objects from instance
-    related_objects_dict = get_related_objects(related_fields, instance)
-
-    instance_dict = {**instance_dict, **related_objects_dict}
-    
-    return JsonResponse(instance_dict, safe=False)
-
+    instance_dict = single_instance_to_dict(request, model, allowed_fields, related_fields, modify_with, instance)
   
+    if instance_dict:
+        return JsonResponse(instance_dict, safe=False)
+    else:
+        return error("Can't find in db.")
+ 
+
+def single_instance_to_dict(request, model, allowed_fields, related_fields, modify_with, instance):
+    if instance:
+        # Get dict without related objects
+        instance_dict = instance.__dict__
+        
+    else:
+        return None
+      
+    if instance_dict:
+        # Create sanitizer for model, and return error if hidden and no api_key
+        admin_sanitizer = check_api_key_and_create_sanitizer(request, model)       
+        instance_dict = admin_sanitizer(instance_dict)
+    
+    if instance_dict:
+        # Remove non-allowed fields from instance_dict
+        instance_dict = remove_non_allowed_fields(instance_dict, allowed_fields)
+    
+    if instance_dict:
+        # Modify instance dict
+        instance_dict = modify_with(instance_dict)
+    
+    if instance_dict:
+        # Get dict of only related objects from instance
+        related_objects_dict = get_related_objects(related_fields, instance)
+
+    if instance_dict:
+        return {**instance_dict, **related_objects_dict}
+
+    else:
+        return None
+
 # Create a new instance:
 def new_instance(request, model, required_fields, allowed_fields):
     log_request("new", model)
