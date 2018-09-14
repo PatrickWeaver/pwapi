@@ -118,18 +118,29 @@ def get_instance(request, model, slug, allowed_fields, related_fields=[], modify
         return error("Can't find in db.")
 
     
-    sanitized_instance_dict = get_related_objects(related_fields, instance, allowed_fields)
-      
-    modified_instance_dict = modify_with(sanitized_instance_dict)
+    # Get dict without related objects
+    instance_dict = instance.__dict__
     
+    # Create sanitizer for model, and return error if hidden and no api_key
     admin_sanitizer = check_api_key_and_create_sanitizer(request, model)       
-        
-    admin_sanitized_instance_dict = admin_sanitizer(modified_instance_dict)
+    instance_dict = admin_sanitizer(instance_dict)
     
-    if admin_sanitized_instance_dict:
-        return JsonResponse(admin_sanitized_instance_dict, safe=False)
-    else:
+    if not instance_dict:
         return error("Can't find in db.")
+        
+    # Remove non-allowed fields from instance_dict
+    instance_dict = remove_non_allowed_fields(instance_dict, allowed_fields)
+    
+    # Modify instance dict
+    instance_dict = modify_with(instance_dict)
+    
+    
+    # Get dict of only related objects from instance
+    related_objects_dict = get_related_objects(related_fields, instance)
+
+    instance_dict = {**instance_dict, **related_objects_dict}
+    
+    return JsonResponse(instance_dict, safe=False)
 
   
 # Create a new instance:
@@ -269,11 +280,8 @@ def parse_non_text_field(field_type, value):
 
 # Add related objects as dictionaries
 # Passed to parent function in related_fields
-def get_related_objects(related_fields, instance, allowed_fields = False):
+def get_related_objects(related_fields, instance):
     instance_dict = model_to_dict(instance)
-    
-    if allowed_fields:
-        instance_dict = remove_non_allowed_fields(instance_dict, allowed_fields)
     
     related_keys = list(map(
         lambda rf: rf["field_name"],
@@ -292,5 +300,5 @@ def get_related_objects(related_fields, instance, allowed_fields = False):
       related_fields
     ))
 
-    related_dict = dict(zip(related_keys, related_values))
-    return {**instance_dict, **related_dict}
+    return dict(zip(related_keys, related_values))
+    #return {**instance_dict, **related_dict}
