@@ -40,10 +40,10 @@ def projects(request):
         'sort_date',
         'project_url',
         'status_id',
-        'is_hidden',
-        'tags'
+        'is_hidden'
       
-    ] # Add: cover_photo_id
+    ] + list(map(lambda x: x["field_name"], project_related_fields))
+    # Add: cover_photo_id
     
     order_by = '-sort_date'
     return index_response(request, Project, index_fields, order_by, related_fields=project_related_fields)
@@ -62,9 +62,8 @@ project_allowed_fields = [
     'sort_date',
     'project_url',
     'source_url',
-    'is_hidden',
-    'tags' # Find a way to add all project_related_fields
-] + project_required_fields
+    'is_hidden',# Find a way to add all project_related_fields
+] + project_required_fields + list(map(lambda x: x["field_name"], project_related_fields))
 
 def get_project(request, slug):
     return get_instance(request, Project, slug, project_allowed_fields, related_fields=project_related_fields)

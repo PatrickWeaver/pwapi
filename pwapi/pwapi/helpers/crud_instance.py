@@ -103,16 +103,21 @@ def index_response(request, model, index_fields, order_by, related_fields=[], mo
     
 # Get an existing instance:
 def get_instance(request, model, slug, allowed_fields, related_fields=[], modify_with=unmodified):
+    
+    # Log the request
     log_request('get', model, slug)
     
+    # Check that request uses "GET" method else return error
     required_method_type = "GET"
     if not check_method_type(request, required_method_type):
         return invalid_method(required_method_type)
       
+    # Get single queryset from db else return error
     instance = find_single_instance(model, "slug", slug)
     if not instance:
         return error("Can't find in db.")
 
+    
     sanitized_instance_dict = get_related_objects(related_fields, instance, allowed_fields)
       
     modified_instance_dict = modify_with(sanitized_instance_dict)
@@ -276,8 +281,6 @@ def get_related_objects(related_fields, instance, allowed_fields = False):
     ))
 
     def related_field_to_dict(rf):
-      
-        print("^^", instance)
       
         return list(map(
             model_to_dict,
