@@ -16,14 +16,6 @@ class Tag(models.Model):
         self.slug = create_slug(self.name, self.slug, Tag, self.id)
         super(Tag, self).save(*args, **kwargs)
 
-class Image(models.Model):
-    uuid = models.UUIDField(default=uuid.uuid4, editable=False, blank=True)
-    order = models.IntegerField(default=0, blank=True)
-    cover = models.BooleanField(default=False, blank=True)
-    caption = models.CharField(max_length=1024, null=True)
-    url = models.CharField(max_length=1024)
-    created_date = models.DateTimeField(default=timezone.now, blank=True)
-
 class Project(models.Model):
     name = models.CharField(max_length=1024)
     slug = models.CharField(max_length=1024, unique=True, blank=True)
@@ -35,7 +27,6 @@ class Project(models.Model):
     tags = models.ManyToManyField(Tag, related_name="project_tags")
     project_url = models.CharField(max_length=1024, blank=True, null=True)
     source_url = models.CharField(max_length=1024, blank=True, null=True)
-    images = models.ManyToManyField(Image)
     is_hidden = models.BooleanField(default=False, blank=False)
     created_date = models.DateTimeField(default=timezone.now, blank=True)
 
@@ -55,3 +46,15 @@ def get_sort_date(end_date, start_date):
         return start_date
     else:
         return timezone.now()
+      
+class Image(models.Model):
+    uuid = models.UUIDField(default=uuid.uuid4, editable=False, blank=True)
+    order = models.IntegerField(default=0, blank=True, unique=True)
+    cover = models.BooleanField(default=False, blank=True)
+    caption = models.CharField(max_length=1024, null=True)
+    url = models.CharField(max_length=1024)
+    created_date = models.DateTimeField(default=timezone.now, blank=True)
+    project = models.ForeignKey(Project, on_delete=models.CASCADE)
+    
+    #def save(self, *args, **kwargs):
+        #self.order = Image.objects.filter(project=self.project).count() 

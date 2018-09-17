@@ -39,6 +39,7 @@ def projects(request):
         'end_date',
         'sort_date',
         'project_url',
+        'source_url',
         'status_id',
         'is_hidden'
       
@@ -111,13 +112,27 @@ def delete_tag_by_id(request, id):
 # - - - - IMAGES - - - - - #
 # --- --- --- --- --- ---  #
 
-def images(request, project, id):
-    pass
-'''
-    index_fields = ['url', 'caption', 'cover']
-    order_by = 'url'
+def images(request):
+    index_fields = ['url', 'caption', 'cover', 'uuid', 'created_date', 'project']
+    order_by = 'project'
     return index_response(request, Image, index_fields, order_by)
-'''
+
+image_required_fields = ['url', 'project']
+image_allowed_fields = ['caption', 'cover'] + image_required_fields
+  
+def get_image(request, uuid):
+    return get_instance(request, Image, uuid, image_allowed_fields)
+  
+def new_image(request):
+    return new_instance(request, Image, image_required_fields, image_allowed_fields)
+      
+def edit_image(request, uuid):
+    return edit_instance(request, Image, uuid, image_required_fields, image_allowed_fields)
+  
+def delete_image(request, uuid):
+    return delete_instance(request, Image, "slug", uuid)
+def delete_image_by_id(request, id):
+    return delete_instance(request, Image, "id", id)
 
 #  --- --- --- --- --- --- #
 # - - PROJECT <-> TAG  - - #

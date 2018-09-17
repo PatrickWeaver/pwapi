@@ -68,6 +68,7 @@ def index_response(request, model, index_fields, order_by, related_fields=[], mo
     # Get all instances from DB
     ordered_instance_objects_qs = model.objects.all().order_by(order_by)[start_of_page:end_of_page] 
     
+    # get single instance flow on each object
     on_each_instance = partial(single_instance_to_dict, request, model, index_fields, related_fields, modify_each_with)
     index_list = list(map(
         on_each_instance,
@@ -76,8 +77,15 @@ def index_response(request, model, index_fields, order_by, related_fields=[], mo
     
     # Remove None items from list that were removed from admin_sanitizer()
     index_list = list(filter((None).__ne__, index_list))
-    number_of = len(index_list)
     
+    
+    # Get count of items on all pages, exclude hidden if not admin:
+    if admin_sanitizer == unmodified:
+        number_of = model.objects.all().count()
+    else:
+        key = model.hide_if
+        filter_dict = {key: False}
+        number_of = model.objects.filter(**filter_dict).count()
     
     # Create response dict
     model_name = get_model_name(model)
@@ -139,6 +147,9 @@ def single_instance_to_dict(request, model, allowed_fields, related_fields, modi
         related_objects_dict = get_related_objects(related_fields, instance)
 
     if instance_dict:
+        pass
+        #if instance_dict["upload"]:
+        #    instance_dict["url"] = instance.upload.url
         return {**instance_dict, **related_objects_dict}
 
     else:
@@ -302,4 +313,3 @@ def get_related_objects(related_fields, instance):
     ))
 
     return dict(zip(related_keys, related_values))
-    #return {**instance_dict, **related_dict}

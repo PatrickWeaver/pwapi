@@ -26,10 +26,10 @@ def people(request):
 
 def authenticate(request):
     error = False
-    print(request.body)
+    print(request.body.decode("utf-8"))
     if request.method == "POST":
         if request.body:
-            jsonData = json.loads(request.body)
+            jsonData = json.loads(request.body.decode("utf-8"))
             if jsonData["username"] and jsonData["password"]:
                 username = bleach.clean(jsonData["username"])
                 password = jsonData["password"]
