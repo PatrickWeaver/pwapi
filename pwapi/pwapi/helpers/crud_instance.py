@@ -284,8 +284,7 @@ def remove_non_allowed_fields(instance_dict, allowed_fields, model):
                 sanitized_instance_dict[field] = {
                     "markdown": instance_dict[field],
                     "html": markdown(instance_dict[field], extensions=["markdown.extensions.extra"]),
-                    "plaintext": get_plaintext(instance_dict[field]),
-                    "hello": "hello"
+                    "plaintext": get_plaintext(instance_dict[field])
                 }
             else:
                 print("NOT A TEXT FIELD: ", model._meta.get_field(field).__class__)

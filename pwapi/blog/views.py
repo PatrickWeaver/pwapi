@@ -50,8 +50,7 @@ post_allowed_fields = [
 ] + post_required_fields
 
 def get_post(request, slug):
-    modify_with = expand_post
-    return get_instance(request, Post, slug, post_allowed_fields, modify_with=modify_with)
+    return get_instance(request, Post, slug, post_allowed_fields)
   
 def new_post(request):
     return new_instance(request, Post, post_required_fields, post_allowed_fields)
@@ -64,17 +63,11 @@ def delete_post(request, slug):
   
 def delete_post_by_id(request, id):
     return delete_instance(request, Post, "id", id)
-    
 
-def expand_post(post_dict):
-    html_body = markdown(post_dict["body"], extensions=["markdown.extensions.extra"])
-    post_dict["html_body"] = html_body
-    post_dict["plaintext_body"] = get_plaintext(html_body)
-    return post_dict
 
 def expand_preview_post(post_dict):
-    html_body = markdown(post_dict["body"], extensions=["markdown.extensions.extra"])
-    plaintext_body = get_plaintext(html_body)
+    #html_body = markdown(post_dict["body"], extensions=["markdown.extensions.extra"])
+    plaintext_body = post_dict["body"]["plaintext"]
     full_post = False
     if len(plaintext_body) <= 280:
         full_post = True
