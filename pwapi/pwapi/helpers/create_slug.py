@@ -2,10 +2,18 @@ import re
 import uuid
 from . db import find_single_instance
 
-def create_slug(text, slug, model, id):
-    # How to deal with non unique
-    if slug == "" or slug == None:
-        slug = text
+def create_slug(model, id, *args):
+    # args are passed in priority order
+    # Get first arg that is not blank as slug
+    slug = False
+    for text in args:
+        if type(text) == str and text != "":
+            slug = text
+            break
+    
+    if not slug:
+        slug = str(uuid.uuid4())
+    
     sanitized_slug = sanitize_for_url(slug)
     dup_instance = find_single_instance(model, "slug", sanitized_slug)
     if dup_instance:

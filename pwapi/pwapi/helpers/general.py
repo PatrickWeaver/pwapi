@@ -11,6 +11,10 @@ bleach.sanitizer.ALLOWED_ATTRIBUTES[u"iframe"] = [u"width", u"height", u"src", u
 # https://www.crummy.com/software/BeautifulSoup/bs4/doc/
 from bs4 import BeautifulSoup
 
+# Markdown is used to parse markdown to HTML to send to Beautiful Soup.
+# https://pypi.python.org/pypi/Markdown
+from markdown import markdown
+
 from people.views import check_api_key
 
 # Default function for unmodified instance dicts
@@ -29,11 +33,14 @@ def remove_hidden_func(field):
         return unmodified
       
       
-def get_model_name(model):
-    return str(model.__name__).lower() + 's'
+def get_model_name(model, singular=False):
+    plural = 's'
+    if singular:
+        plural = ''
+    return str(model.__name__).lower() + plural
 
-def log_request(req_type, model, slug=""):
-  print(req_type, get_model_name(model), ':', slug)
+def log_request(req_type, model, lookup_field, lookup_value):
+  print(req_type, get_model_name(model), 'by', lookup_field, ':', lookup_value)
   
 def validate_body(request):
     if not request.body:
@@ -45,6 +52,14 @@ def validate_body(request):
     if not api_key_valid:
         return False
     return parsed_body
+  
+def convert_text_field(text):
+    print("&*&*&*&*&*", text)
+    return {
+        "markdown": text,
+        "html": markdown(text, extensions=["markdown.extensions.extra"]),
+        "plaintext": get_plaintext(text)
+    }
   
 def get_plaintext(markdown_text):
     return bleach.clean(''.join(BeautifulSoup(markdown_text, "html5lib").findAll(text=True)))

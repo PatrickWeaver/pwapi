@@ -9,7 +9,7 @@ from django.db import models
 
 from people.views import check_api_key
 
-from . general import unmodified, remove_hidden_func, get_model_name, validate_body, log_request, get_plaintext
+from . general import unmodified, remove_hidden_func, get_model_name, validate_body, log_request, convert_text_field
 from . responses import error
 from . db import find_single_instance, save_object_instance
 
@@ -23,10 +23,6 @@ import bleach
 # Allow iframe tags and attributes for YouTube videos:
 bleach.sanitizer.ALLOWED_TAGS.append(u'iframe')
 bleach.sanitizer.ALLOWED_ATTRIBUTES[u'iframe'] = [u'width', u'height', u'src', u'frameborder', u'allow', u'allowfullscreen']
-
-# Markdown is used to parse markdown to HTML to send to Beautiful Soup.
-# https://pypi.python.org/pypi/Markdown
-from markdown import markdown
 
 # Default values:
 
@@ -46,10 +42,10 @@ def check_method_type(request, type):
 def invalid_method(type):
     return error("- Only " + type  + " requests are allowed at this endpoint.")
 
-def index_response(request, model, index_fields, order_by, related_fields=[], modify_each_with=unmodified):
+def index_response(request, model, index_fields, order_by, related_fields=[], modify_each_with=unmodified, instance_path_field=False, sort_field=False):
   
     # Log the request
-    log_request('get', model, 'all')
+    log_request('get', model, 'index', 'all')
     
     # Pagination
     # Try/except will deal with any non integer values
@@ -74,7 +70,7 @@ def index_response(request, model, index_fields, order_by, related_fields=[], mo
     ordered_instance_objects_qs = model.objects.all().order_by(order_by)[start_of_page:end_of_page] 
     
     # get single instance flow on each object
-    on_each_instance = partial(single_instance_to_dict, request, model, index_fields, related_fields, modify_each_with)
+    on_each_instance = partial(single_instance_to_dict, request, model, index_fields, related_fields, modify_each_with, instance_path_field)
     index_list = list(map(
         on_each_instance,
         ordered_instance_objects_qs
@@ -92,6 +88,10 @@ def index_response(request, model, index_fields, order_by, related_fields=[], mo
         filter_dict = {key: False}
         number_of = model.objects.filter(**filter_dict).count()
     
+    if sort_field: 
+      index_list = sorted(index_list, key=lambda k: k[sort_field], reverse = True)
+      #newlist = sorted(list_to_be_sorted, key=lambda k: k['name']) 
+    
     # Create response dict
     model_name = get_model_name(model)
     response = {
@@ -106,10 +106,12 @@ def index_response(request, model, index_fields, order_by, related_fields=[], mo
 
     
 # Get an existing instance:
-def get_instance(request, model, slug, allowed_fields, related_fields=[], modify_with=unmodified):
-    
+def get_instance(request, model, allowed_fields, lookup_field=False, lookup_value=False, related_fields=[], modify_with=unmodified, instance_path_field = False):
+    if not (lookup_field and lookup_value):
+        return error("No lookup field or value")
+      
     # Log the request
-    log_request('get', model, slug)
+    log_request('get', model, lookup_field, lookup_value)
     
     # Check that request uses "GET" method else return error
     required_method_type = "GET"
@@ -117,8 +119,8 @@ def get_instance(request, model, slug, allowed_fields, related_fields=[], modify
         return invalid_method(required_method_type)
       
     # Get single queryset from db else return error
-    instance = find_single_instance(model, "slug", slug)
-    instance_dict = single_instance_to_dict(request, model, allowed_fields, related_fields, modify_with, instance)
+    instance = find_single_instance(model, lookup_field, lookup_value)
+    instance_dict = single_instance_to_dict(request, model, allowed_fields, related_fields, modify_with, instance_path_field, instance)
   
     if instance_dict:
         return JsonResponse(instance_dict, safe=False)
@@ -126,7 +128,7 @@ def get_instance(request, model, slug, allowed_fields, related_fields=[], modify
         return error("Can't find in db.")
  
 
-def single_instance_to_dict(request, model, allowed_fields, related_fields, modify_with, instance):
+def single_instance_to_dict(request, model, allowed_fields, related_fields, modify_with, instance_path_field, instance):
     if instance:
         # Get dict without related objects
         instance_dict = instance.__dict__
@@ -149,9 +151,12 @@ def single_instance_to_dict(request, model, allowed_fields, related_fields, modi
     if instance_dict:
         # Get dict of only related objects from instance
         related_objects_dict = get_related_objects(related_fields, instance)
+    
+    if instance_dict and instance_path_field:
+        # Add hyperlink
+        instance_dict[get_model_name(model, singular=True) + "_url"] = request.scheme + "://" + request.get_host() + request.path + instance_dict[instance_path_field] + "/"
 
     if instance_dict:
-        pass
         #if instance_dict["upload"]:
         #    instance_dict["url"] = instance.upload.url
         return {**instance_dict, **related_objects_dict}
@@ -161,7 +166,7 @@ def single_instance_to_dict(request, model, allowed_fields, related_fields, modi
 
 # Create a new instance:
 def new_instance(request, model, required_fields, allowed_fields, modify_with=unmodified):
-    log_request("new", model)
+    log_request("new", model, 'new', '')
     
     required_method_type = "POST"
     if not check_method_type(request, required_method_type):
@@ -182,8 +187,11 @@ def new_instance(request, model, required_fields, allowed_fields, modify_with=un
     return JsonResponse(instance_dict, safe=False)
   
 # Edit an existing instance
-def edit_instance(request, model, slug, required_fields, allowed_fields):
-    log_request("edit", model, slug)
+def edit_instance(request, model, required_fields, allowed_fields, lookup_field=False, lookup_value=False):
+    if not (lookup_field and lookup_value):
+        return error("No lookup field or value")
+  
+    log_request("edit", model, lookup_field, lookup_value)
     
     required_method_type = "POST"
     if not check_method_type(request, required_method_type):
@@ -193,7 +201,7 @@ def edit_instance(request, model, slug, required_fields, allowed_fields):
     if not request_dict:
           return error("No body in request or incorrect fields")
       
-    instance = find_single_instance(model, "slug", slug)
+    instance = find_single_instance(model, lookup_field, lookup_value)
     if not instance:
         return error("Can't find in db.")
     
@@ -214,8 +222,11 @@ def edit_instance(request, model, slug, required_fields, allowed_fields):
     return JsonResponse(updated_instance_dict, safe=False)
     
 # Delete an existing instance
-def delete_instance(request, model, key, value):
-    log_request("delete by", model, value)
+def delete_instance(request, model, lookup_field=False, lookup_value=False):
+    if not (lookup_field and lookup_value):
+        return error("No lookup field or value")
+      
+    log_request("delete by", model, lookup_field, lookup_value)
     
     required_method_type = "POST"
     if not check_method_type(request, required_method_type):
@@ -225,7 +236,7 @@ def delete_instance(request, model, key, value):
     if not instance_dict:
         return error("No body in request or incorrect API key")
       
-    instance = find_single_instance(model, key, value)
+    instance = find_single_instance(model, lookup_field, lookup_value)
     if not instance:
         return error("Can't find in db.")
     instance.delete()
@@ -281,11 +292,7 @@ def remove_non_allowed_fields(instance_dict, allowed_fields, model):
         try:
             sanitized_instance_dict[field] = instance_dict[field]
             if model._meta.get_field(field).__class__ is models.TextField:
-                sanitized_instance_dict[field] = {
-                    "markdown": instance_dict[field],
-                    "html": markdown(instance_dict[field], extensions=["markdown.extensions.extra"]),
-                    "plaintext": get_plaintext(instance_dict[field])
-                }
+                sanitized_instance_dict[field] = convert_text_field(instance_dict[field])
             else:
                 print("NOT A TEXT FIELD: ", model._meta.get_field(field).__class__)
         except:

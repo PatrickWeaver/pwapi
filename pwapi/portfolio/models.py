@@ -13,27 +13,27 @@ class Tag(models.Model):
     created_date = models.DateTimeField(default=timezone.now, blank=True)
 
     def save(self, *args, **kwargs):
-        self.slug = create_slug(self.name, self.slug, Tag, self.id)
+        self.slug = create_slug(Tag, self.id, self.slug, self.name)
         super(Tag, self).save(*args, **kwargs)
 
 class Project(models.Model):
     name = models.CharField(max_length=1024)
     slug = models.CharField(max_length=1024, unique=True, blank=True)
-    description = models.TextField(default="", blank=True)
+    description = models.TextField(default='', blank=True)
     start_date = models.DateTimeField(null=True, blank=True)
     end_date = models.DateTimeField(null=True, blank=True)
     sort_date = models.DateTimeField(blank=True)
-    status = models.ForeignKey(Tag, related_name="project_status", on_delete=models.PROTECT)
-    tags = models.ManyToManyField(Tag, related_name="project_tags")
+    status = models.ForeignKey(Tag, related_name='project_status', on_delete=models.PROTECT)
+    tags = models.ManyToManyField(Tag, related_name='project_tags')
     project_url = models.CharField(max_length=1024, blank=True, null=True)
     source_url = models.CharField(max_length=1024, blank=True, null=True)
     is_hidden = models.BooleanField(default=False, blank=False)
     created_date = models.DateTimeField(default=timezone.now, blank=True)
 
-    hide_if = "is_hidden"
+    hide_if = 'is_hidden'
 
     def save(self, *args, **kwargs):
-        self.slug = create_slug(self.name, self.slug, Project, self.id)
+        self.slug = create_slug(Project, self.id, self.slug, self.name)
         self.sort_date = get_sort_date(self.end_date, self.start_date)
         super(Project, self).save(*args, **kwargs)
         
