@@ -18,6 +18,10 @@ project_related_fields = [
     {
         "field_name": "tags",
         "related_name": "project_tags"
+    },
+    {
+        "field_name": "status",
+        "relateed_name": "project_status"
     }
 ]
 
@@ -40,15 +44,13 @@ def projects(request):
         'sort_date',
         'project_url',
         'source_url',
-        'status_id',
         'is_hidden'
       
-    ] + list(map(lambda x: x["field_name"], project_related_fields))
+    ] # project_related_fields also added
     # Add: cover_photo_id
     
     order_by = '-sort_date'
     return index_response(request, Project, index_fields, order_by, related_fields=project_related_fields)
-
 
   
 project_required_fields = [
@@ -63,8 +65,8 @@ project_allowed_fields = [
     'sort_date',
     'project_url',
     'source_url',
-    'is_hidden',# Find a way to add all project_related_fields
-] + project_required_fields + list(map(lambda x: x["field_name"], project_related_fields))
+    'is_hidden',
+] + project_required_fields # project_related_fields also added later
 
 def get_project(request, slug):
     return get_instance(request, Project, slug, project_allowed_fields, related_fields=project_related_fields)
@@ -85,19 +87,25 @@ def delete_project_by_id(request, id):
 # - - - - - TAGS - - - - - #
 # --- --- --- --- --- ---  #
 
+def modify_new_tags(request_dict):
+    if not request_dict["status"]:
+        request_dict["color"] = None
+        request_dict["name"] = request_dict["name"].lower()
+    return request_dict
+
 def tags(request):   
-    index_fields = ['name', 'slug', 'color', 'status', 'created_date']
+    index_fields = ['name', 'slug', 'color', 'status', 'created_date', 'id']
     order_by = 'name'
     return index_response(request, Tag, index_fields, order_by)
 
-tag_required_fields = ['name', 'color', 'slug']
-tag_allowed_fields = ['status'] + tag_required_fields
+tag_required_fields = ['name']
+tag_allowed_fields = ['status', 'slug', 'color'] + tag_required_fields
   
 def get_tag(request, slug):
     return get_instance(request, Tag, slug, tag_allowed_fields)
   
 def new_tag(request):
-    return new_instance(request, Tag, tag_required_fields, tag_allowed_fields)
+    return new_instance(request, Tag, tag_required_fields, tag_allowed_fields, modify_with=modify_new_tags)
       
 def edit_tag(request, slug):
     return edit_instance(request, Tag, slug, tag_required_fields, tag_allowed_fields)

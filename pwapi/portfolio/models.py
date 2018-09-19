@@ -7,8 +7,8 @@ from pwapi.helpers.create_slug import create_slug
 
 class Tag(models.Model):
     name = models.CharField(max_length=50, unique=True)
-    color = models.CharField(max_length=6)
-    slug = models.CharField(max_length=50, unique=True)
+    color = models.CharField(max_length=256, null=True, blank=True)
+    slug = models.CharField(max_length=1024, unique=True, blank=True)
     status = models.BooleanField(default=False, blank=True)
     created_date = models.DateTimeField(default=timezone.now, blank=True)
 

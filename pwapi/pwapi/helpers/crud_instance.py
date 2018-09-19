@@ -5,6 +5,7 @@ from functools import partial
 from django.shortcuts import render
 from django.http import HttpRequest, HttpResponse, JsonResponse
 from django.forms.models import model_to_dict
+from django.db import models
 
 from people.views import check_api_key
 
@@ -125,7 +126,6 @@ def single_instance_to_dict(request, model, allowed_fields, related_fields, modi
     if instance:
         # Get dict without related objects
         instance_dict = instance.__dict__
-        
     else:
         return None
       
@@ -156,7 +156,7 @@ def single_instance_to_dict(request, model, allowed_fields, related_fields, modi
         return None
 
 # Create a new instance:
-def new_instance(request, model, required_fields, allowed_fields):
+def new_instance(request, model, required_fields, allowed_fields, modify_with=unmodified):
     log_request("new", model)
     
     required_method_type = "POST"
@@ -164,8 +164,9 @@ def new_instance(request, model, required_fields, allowed_fields):
         return invalid_method(required_method_type)
     
     request_dict = check_for_required_and_allowed_fields(request, model, required_fields, allowed_fields)
+    request_dict = modify_with(request_dict)
     if not request_dict:
-        return error("No body in request or incorrect fields")
+        return error("No body in request or incorrect fields")  
       
     object_instance = save_object_instance(model, request_dict)
     if not object_instance:
@@ -294,21 +295,25 @@ def parse_non_text_field(field_type, value):
 # Passed to parent function in related_fields
 def get_related_objects(related_fields, instance):
     instance_dict = model_to_dict(instance)
+    model = type(instance)
     
     related_keys = list(map(
         lambda rf: rf["field_name"],
         related_fields
     ))
 
-    def related_field_to_dict(rf):
+    def related_field_to_dict(model, instance, rf):
+        if model._meta.get_field(rf["field_name"]).__class__ is models.ManyToManyField:
       
-        return list(map(
-            model_to_dict,
-            instance_dict[rf["field_name"]]
-        ))
-
+            return list(map(
+                model_to_dict,
+                instance_dict[rf["field_name"]]
+            ))
+        else:
+            return model_to_dict(getattr(instance, rf["field_name"]))
+          
     related_values = list(map(
-      related_field_to_dict,
+      partial(related_field_to_dict, model, instance),
       related_fields
     ))
 
