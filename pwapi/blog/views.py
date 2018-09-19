@@ -35,22 +35,30 @@ def index(request):
   
 
 def posts(request):
-    index_fields = ['title', 'slug', 'summary', 'post_date', 'body']
+    index_fields = [
+      'title',
+      'slug',
+      'summary',
+      'post_date',
+      'body',
+      'draft'
+    ]
     order_by = '-post_date'
     modify_each_with = expand_preview_post
-    return index_response(request, Post, index_fields, order_by, modify_each_with);
+    return index_response(request, Post, index_fields, order_by, modify_each_with=modify_each_with);
   
 post_required_fields = ['body']
 post_allowed_fields = [
     'slug',
     'title',
     'summary',
-    'post_date'
+    'post_date',
+    'draft',
 ] + post_required_fields
 
 def get_post(request, slug):
     modify_with = expand_post
-    return get_instance(request, Post, slug, post_allowed_fields, modify_with)
+    return get_instance(request, Post, slug, post_allowed_fields, modify_with=modify_with)
   
 def new_post(request):
     return new_instance(request, Post, post_required_fields, post_allowed_fields)

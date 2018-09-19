@@ -9,12 +9,15 @@ class Post(models.Model):
     body = models.TextField()
     post_date = models.DateTimeField(default=timezone.now, blank=True)
     created_date = models.DateTimeField(default=timezone.now, blank=True)
+    draft = models.BooleanField(default=False, blank=True)
+    
+    hide_if = "draft"
 
     def save(self, *args, **kwargs):
         slug_text = self.body
         if (self.title):
           slug_text = self.title    
-        self.slug = create_slug(slug_text, self.slug, self.post_date, Post, self.id)
+        self.slug = create_slug(slug_text, self.slug, Post, self.id)
         super(Post, self).save(*args, **kwargs)
 
     def __str__(self):

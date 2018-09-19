@@ -2,6 +2,7 @@ from django.shortcuts import render
 from django.http import HttpRequest, HttpResponse, JsonResponse
 from storages.backends.s3boto3 import S3Boto3Storage
 
+from pwapi.helpers.crud_instance import index_response, get_instance, new_instance, edit_instance, delete_instance
 
 from django.contrib.auth.decorators import login_required
 from django.views.generic.edit import CreateView
@@ -10,8 +11,9 @@ from django.urls import reverse_lazy
 from . models import Upload
 
 def root(request):
-    response = {}
-    return JsonResponse(response, safe=False)
+    index_fields = ['uploaded_at', 'filename', 'uuid', 'upload', 'url']
+    order_by = 'uploaded_at'
+    return index_response(request, Upload, index_fields, order_by)
 
 def new(request):
     print(request.method + ": " + request.path);
@@ -23,10 +25,11 @@ def new(request):
 
 def upload_file(request):
     file_dict = {
-        "upload": request.FILES["file"],
-        "filename": request.POST["filename"],
-        "uuid": request.POST["uuid"]
+        "upload": request.FILES["file"]
     }
+    
+    print("**")
+    print(file_dict["upload"])
 
     upload = Upload(**file_dict)
     upload.save()
