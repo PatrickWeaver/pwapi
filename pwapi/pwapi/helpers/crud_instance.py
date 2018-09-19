@@ -9,7 +9,7 @@ from django.db import models
 
 from people.views import check_api_key
 
-from . general import unmodified, remove_hidden_func, get_model_name, validate_body, log_request
+from . general import unmodified, remove_hidden_func, get_model_name, validate_body, log_request, get_plaintext
 from . responses import error
 from . db import find_single_instance, save_object_instance
 
@@ -23,6 +23,10 @@ import bleach
 # Allow iframe tags and attributes for YouTube videos:
 bleach.sanitizer.ALLOWED_TAGS.append(u'iframe')
 bleach.sanitizer.ALLOWED_ATTRIBUTES[u'iframe'] = [u'width', u'height', u'src', u'frameborder', u'allow', u'allowfullscreen']
+
+# Markdown is used to parse markdown to HTML to send to Beautiful Soup.
+# https://pypi.python.org/pypi/Markdown
+from markdown import markdown
 
 # Default values:
 
@@ -136,7 +140,7 @@ def single_instance_to_dict(request, model, allowed_fields, related_fields, modi
     
     if instance_dict:
         # Remove non-allowed fields from instance_dict
-        instance_dict = remove_non_allowed_fields(instance_dict, allowed_fields)
+        instance_dict = remove_non_allowed_fields(instance_dict, allowed_fields, model)
     
     if instance_dict:
         # Modify instance dict
@@ -238,7 +242,8 @@ def check_api_key_and_create_sanitizer(request, model):
 def dict_from_single_object(instance, allowed_fields):
     try:
         instance_dict = instance.__dict__
-        sanitized_instance_dict = remove_non_allowed_fields(instance_dict, allowed_fields)
+        model = type(instance)
+        sanitized_instance_dict = remove_non_allowed_fields(instance_dict, allowed_fields, model)
         return sanitized_instance_dict
     except:
         print("ERROR:")
@@ -248,7 +253,7 @@ def dict_from_single_object(instance, allowed_fields):
 def check_for_required_and_allowed_fields(request, model, required_fields = [], allowed_fields = ["api_key"]):
     parsed_body = validate_body(request)
     parsed_body_with_valid_types = parsed_dict_from(parsed_body, model)
-    sanitized_parsed_body = remove_non_allowed_fields(parsed_body, allowed_fields)
+    sanitized_parsed_body = remove_non_allowed_fields(parsed_body, allowed_fields, model)
     if sanitized_parsed_body == {}:
         print('Error parsing request body.')
         return False
@@ -270,11 +275,20 @@ def parsed_dict_from(parsed_body, model):
             pass
     return parsed_dict
   
-def remove_non_allowed_fields(instance_dict, allowed_fields):
+def remove_non_allowed_fields(instance_dict, allowed_fields, model):
     sanitized_instance_dict = {}
     for field in allowed_fields:
         try:
             sanitized_instance_dict[field] = instance_dict[field]
+            if model._meta.get_field(field).__class__ is models.TextField:
+                sanitized_instance_dict[field] = {
+                    "markdown": instance_dict[field],
+                    "html": markdown(instance_dict[field], extensions=["markdown.extensions.extra"]),
+                    "plaintext": get_plaintext(instance_dict[field]),
+                    "hello": "hello"
+                }
+            else:
+                print("NOT A TEXT FIELD: ", model._meta.get_field(field).__class__)
         except:
             print(sys.exc_info())
             print(field, "not provided, using default")

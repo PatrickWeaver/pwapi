@@ -4,19 +4,12 @@ from django.forms.models import model_to_dict
 from blog.models import Post
 from people.views import check_api_key
 from pwapi.helpers.crud_instance import index_response, get_instance, new_instance, edit_instance, delete_instance
+from pwapi.helpers.general import get_plaintext
 
 from datetime import datetime
 # https://docs.python.org/3/library/json.html
 import json
-# bleach is used to sanatize request input
-# https://pypi.python.org/pypi/bleach
-import bleach
-# Allow iframe tags and attributes for YouTube videos:
-bleach.sanitizer.ALLOWED_TAGS.append(u"iframe")
-bleach.sanitizer.ALLOWED_ATTRIBUTES[u"iframe"] = [u"width", u"height", u"src", u"frameborder", u"allow", u"allowfullscreen"]
-# BeautifulSoup4 is used to get plaintext from HTML (via Markdown)
-# https://www.crummy.com/software/BeautifulSoup/bs4/doc/
-from bs4 import BeautifulSoup
+
 # Markdown is used to parse markdown to HTML to send to Beautiful Soup.
 # https://pypi.python.org/pypi/Markdown
 from markdown import markdown
@@ -72,10 +65,6 @@ def delete_post(request, slug):
 def delete_post_by_id(request, id):
     return delete_instance(request, Post, "id", id)
     
-
-
-def get_plaintext(markdown_text):
-    return bleach.clean(''.join(BeautifulSoup(markdown_text, "html5lib").findAll(text=True)))
 
 def expand_post(post_dict):
     html_body = markdown(post_dict["body"], extensions=["markdown.extensions.extra"])

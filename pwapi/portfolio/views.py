@@ -3,13 +3,17 @@ from django.http import HttpRequest, HttpResponse, JsonResponse
 from portfolio.models import Tag, Image, Project
 from pwapi.helpers.crud_instance import index_response, get_instance, new_instance, edit_instance, delete_instance
 from pwapi.helpers.related_instances import add_child_to, remove_child_from
-from pwapi.helpers.general import unmodified
+from pwapi.helpers.general import unmodified, get_plaintext
 
 from people.views import check_api_key
 
 # https://docs.python.org/3/library/json.html
 import json
 import bleach
+
+# Markdown is used to parse markdown to HTML to send to Beautiful Soup.
+# https://pypi.python.org/pypi/Markdown
+from markdown import markdown
 
 # General error message for invalid requests:
 errorJSON = [{'Error': 'No data for that request.'}]
