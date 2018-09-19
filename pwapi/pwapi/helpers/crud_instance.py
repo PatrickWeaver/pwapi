@@ -142,7 +142,12 @@ def single_instance_to_dict(request, model, allowed_fields, related_fields, modi
     
     if instance_dict:
         # Remove non-allowed fields from instance_dict
-        instance_dict = remove_non_allowed_fields(instance_dict, allowed_fields, model)
+        instance_dict = remove_non_allowed_fields(instance_dict, allowed_fields)
+        
+        for field in instance_dict:
+        # Convert text fields to html and plaintext (as well as markdown default)
+            if model._meta.get_field(field).__class__ is models.TextField and instance_dict[field]:
+                instance_dict[field] = convert_text_field(instance_dict[field])
     
     if instance_dict:
         # Modify instance dict
@@ -180,9 +185,9 @@ def new_instance(request, model, required_fields, allowed_fields, modify_with=un
     object_instance = save_object_instance(model, request_dict)
     if not object_instance:
         return error("Error saving object")
-    
+    print("11111", object_instance)
     instance_dict = dict_from_single_object(object_instance, allowed_fields)
-    
+    print("22222", instance_dict)
     instance_dict["success"] = True
     return JsonResponse(instance_dict, safe=False)
   
@@ -254,7 +259,7 @@ def dict_from_single_object(instance, allowed_fields):
     try:
         instance_dict = instance.__dict__
         model = type(instance)
-        sanitized_instance_dict = remove_non_allowed_fields(instance_dict, allowed_fields, model)
+        sanitized_instance_dict = remove_non_allowed_fields(instance_dict, allowed_fields)
         return sanitized_instance_dict
     except:
         print("ERROR:")
@@ -264,7 +269,7 @@ def dict_from_single_object(instance, allowed_fields):
 def check_for_required_and_allowed_fields(request, model, required_fields = [], allowed_fields = ["api_key"]):
     parsed_body = validate_body(request)
     parsed_body_with_valid_types = parsed_dict_from(parsed_body, model)
-    sanitized_parsed_body = remove_non_allowed_fields(parsed_body, allowed_fields, model)
+    sanitized_parsed_body = remove_non_allowed_fields(parsed_body, allowed_fields)
     if sanitized_parsed_body == {}:
         print('Error parsing request body.')
         return False
@@ -286,15 +291,11 @@ def parsed_dict_from(parsed_body, model):
             pass
     return parsed_dict
   
-def remove_non_allowed_fields(instance_dict, allowed_fields, model):
+def remove_non_allowed_fields(instance_dict, allowed_fields):
     sanitized_instance_dict = {}
     for field in allowed_fields:
         try:
             sanitized_instance_dict[field] = instance_dict[field]
-            if model._meta.get_field(field).__class__ is models.TextField:
-                sanitized_instance_dict[field] = convert_text_field(instance_dict[field])
-            else:
-                print("NOT A TEXT FIELD: ", model._meta.get_field(field).__class__)
         except:
             print(sys.exc_info())
             print(field, "not provided, using default")

@@ -54,7 +54,6 @@ def validate_body(request):
     return parsed_body
   
 def convert_text_field(text):
-    print("&*&*&*&*&*", text)
     return {
         "markdown": text,
         "html": markdown(text, extensions=["markdown.extensions.extra"]),
