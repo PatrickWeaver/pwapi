@@ -37,8 +37,7 @@ def posts(request):
         index_fields=index_fields,
         order_by='-post_date',
         modify_each_with=expand_preview_post,
-        instance_path_field='slug',
-        sort_field='post_date'
+        instance_path_field='slug'
     );
   
 post_required_fields = ['body']

@@ -49,8 +49,7 @@ def index_response(
     order_by='?',
     related_fields=[],
     modify_each_with=unmodified,
-    instance_path_field=False,
-    sort_field=False
+    instance_path_field=False
 ):
     
     if not (request and model):
@@ -108,11 +107,7 @@ def index_response(
     else:
         key = model.hide_if
         filter_dict = {key: False}
-        number_of = model.objects.filter(**filter_dict).count()
-    
-    if sort_field: 
-      index_list = sorted(index_list, key=lambda k: k[sort_field], reverse = True)
-      #newlist = sorted(list_to_be_sorted, key=lambda k: k['name']) 
+        number_of = model.objects.filter(**filter_dict).count() 
     
     # Create response dict
     model_name = get_model_name(model)

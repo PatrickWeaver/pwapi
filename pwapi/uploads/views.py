@@ -15,7 +15,7 @@ def root(request):
         request=request,
         model=Upload,
         index_fields=['uploaded_at', 'filename', 'uuid', 'upload', 'url'],
-        order_by='uploaded_at'
+        order_by='-uploaded_at'
     )
 
 def new(request):

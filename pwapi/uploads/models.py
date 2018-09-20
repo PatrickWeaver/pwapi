@@ -10,9 +10,9 @@ def upload_file(instance, filename):
 
 class Upload(models.Model):
     uploaded_at = models.DateTimeField(auto_now_add=True)
-    uuid = models.TextField(default="", blank=True)
+    uuid = models.CharField(max_length=1024, unique=True, default="", blank=True)
     upload = models.FileField(upload_to=upload_file)
-    url = models.TextField(default="")
+    url = models.CharField(max_length=2048, unique=True, default="")
     
     def save(self, *args, **kwargs):
         uuid = str(uuid4())

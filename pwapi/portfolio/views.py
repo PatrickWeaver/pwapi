@@ -55,8 +55,7 @@ def projects(request):
         index_fields=index_fields,
         order_by='-sort_date',
         related_fields=project_related_fields,
-        instance_path_field='slug',
-        sort_field='sort_date'
+        instance_path_field='slug'
     )
 
   
