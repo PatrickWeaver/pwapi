@@ -31,9 +31,15 @@ def posts(request):
       'body',
       'draft'
     ]
-    order_by = '-post_date'
-    modify_each_with = expand_preview_post
-    return index_response(request, Post, index_fields, order_by, modify_each_with=modify_each_with, instance_path_field='slug', sort_field='post_date');
+    return index_response(
+        request=request,
+        model=Post,
+        index_fields=index_fields,
+        order_by='-post_date',
+        modify_each_with=expand_preview_post,
+        instance_path_field='slug',
+        sort_field='post_date'
+    );
   
 post_required_fields = ['body']
 post_allowed_fields = [
@@ -42,22 +48,52 @@ post_allowed_fields = [
     'summary',
     'post_date',
     'draft',
+    'id'
 ] + post_required_fields
 
 def get_post(request, slug):
-    return get_instance(request, Post, post_allowed_fields, lookup_field='slug', lookup_value=slug, instance_path_field='slug')
+    return get_instance(
+        request=request,
+        model=Post,
+        allowed_fields=post_allowed_fields,
+        lookup_field='slug',
+        lookup_value=slug,
+        instance_path_field='slug'
+    )
   
 def new_post(request):
-    return new_instance(request, Post, post_required_fields, post_allowed_fields)
+    return new_instance(
+        request=request,
+        model=Post,
+        required_fields=post_required_fields,
+        allowed_fields=post_allowed_fields
+    )
   
 def edit_post(request, slug):
-    return edit_instance(request, Post, post_required_fields, post_allowed_fields, lookup_field='slug', lookup_value=slug,)
+    return edit_instance(
+        request=request,
+        model=Post,
+        required_fields=post_required_fields,
+        allowed_fields=post_allowed_fields,
+        lookup_field='slug',
+        lookup_value=slug
+    )
   
-def delete_post(request, slug):
-    return delete_instance(request, Post, lookup_field='slug', lookup_value=slug)
+def delete_post_by_slug(request, slug):
+    return delete_instance(
+        request=request,
+        model=Post,
+        lookup_field='slug',
+        lookup_value=slug
+    )
   
 def delete_post_by_id(request, id):
-    return delete_instance(request, Post, lookup_field='id', lookup_value=id)
+    return delete_instance(
+        request=request,
+        model=Post,
+        lookup_field='id',
+        lookup_value=id
+    )
 
 
 def expand_preview_post(post_dict):

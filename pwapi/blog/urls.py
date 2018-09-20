@@ -17,8 +17,8 @@ urlpatterns = [
     path('post/<slug:slug>/edit/', csrf_exempt(views.edit_post), name='blog-post-edit'),
     path('posts/<slug:slug>/edit/', csrf_exempt(views.edit_post), name='blog-posts-edit'),
   
-    path('post/<slug:slug>/delete/', csrf_exempt(views.delete_post), name='blog-post-delete'),
-    path('posts/<slug:slug>/delete/', csrf_exempt(views.delete_post), name='blog-posts-delete'),
+    path('post/<slug:slug>/delete/', csrf_exempt(views.delete_post_by_slug), name='blog-post-delete'),
+    path('posts/<slug:slug>/delete/', csrf_exempt(views.delete_post_by_slug), name='blog-posts-delete'),
     path('post-id/<int:id>/delete/', csrf_exempt(views.delete_post_by_id), name='blog-post-by-id-delete'),
   
     path('uploads/', include('uploads.urls'))

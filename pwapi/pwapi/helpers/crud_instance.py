@@ -33,41 +33,63 @@ default = {
 
 
 def check_method_type(request, type):
-    print("Required:", request.method)
-    print("Actual:", type)
+    print('Required:', request.method)
+    print('Actual:', type)
     if request.method == type:
         return True
     return False
   
 def invalid_method(type):
-    return error("- Only " + type  + " requests are allowed at this endpoint.")
+    return error('- Only ' + type  + ' requests are allowed at this endpoint.')
 
-def index_response(request, model, index_fields, order_by, related_fields=[], modify_each_with=unmodified, instance_path_field=False, sort_field=False):
-  
+def index_response(
+    request=False,
+    model=False,
+    index_fields=[],
+    order_by='?',
+    related_fields=[],
+    modify_each_with=unmodified,
+    instance_path_field=False,
+    sort_field=False
+):
+    
+    if not (request and model):
+        return error('Invalid request')
+    
     # Log the request
     log_request('get', model, 'index', 'all')
     
     # Pagination
     # Try/except will deal with any non integer values
     try:
-        page = int(bleach.clean(request.GET.get("page", str(default['page']))))
-        quantity = int(bleach.clean(request.GET.get("quantity", str(default['quantity']))))
+        page = int(bleach.clean(request.GET.get('page', str(default['page']))))
+        quantity_qs = request.GET.get('quantity', str(default['quantity']))
+        if quantity_qs == 'all':
+            end_of_page = None
+            start_of_page = None
+        else:
+            quantity = int(bleach.clean(quantity_qs))
+            end_of_page = page * quantity
+            start_of_page = end_of_page - quantity
     except ValueError:
         page = default['page']
         quantity = default['quantity']
-    end_of_page = page * quantity
-    start_of_page = end_of_page - quantity
+        end_of_page = page * quantity
+        start_of_page = end_of_page - quantity
+        
+
     
     
     # Create admin sanitizer function to remove hidden instances
     admin_sanitizer = check_api_key_and_create_sanitizer(request, model)
-       
     
-    #all_instances = model.objects.all()
-    #ordered_instance_objects = all_instances.order_by(order_by)[start_of_page:end_of_page] 
-    
-    # Get all instances from DB
-    ordered_instance_objects_qs = model.objects.all().order_by(order_by)[start_of_page:end_of_page] 
+    # Get all instances from DB   
+    filter = {}
+    if hasattr(model, 'hide_if'):
+        filter[model.hide_if] = False
+    ordered_instance_objects_qs = model.objects.filter(**filter).order_by(order_by)
+    if (end_of_page != None) and (start_of_page != None):
+        ordered_instance_objects_qs = ordered_instance_objects_qs[start_of_page:end_of_page]
     
     # get single instance flow on each object
     on_each_instance = partial(single_instance_to_dict, request, model, index_fields, related_fields, modify_each_with, instance_path_field)
@@ -77,7 +99,7 @@ def index_response(request, model, index_fields, order_by, related_fields=[], mo
     ))
     
     # Remove None items from list that were removed from admin_sanitizer()
-    index_list = list(filter((None).__ne__, index_list))
+    #index_list = list(filter((None).__ne__, index_list))
     
     
     # Get count of items on all pages, exclude hidden if not admin:
@@ -106,9 +128,18 @@ def index_response(request, model, index_fields, order_by, related_fields=[], mo
 
     
 # Get an existing instance:
-def get_instance(request, model, allowed_fields, lookup_field=False, lookup_value=False, related_fields=[], modify_with=unmodified, instance_path_field = False):
-    if not (lookup_field and lookup_value):
-        return error("No lookup field or value")
+def get_instance(
+    request=False,
+    model=False,
+    allowed_fields=[],
+    lookup_field=False,
+    lookup_value=False,
+    related_fields=[],
+    modify_with=unmodified,
+    instance_path_field = False
+):
+    if not (request and model and lookup_field and lookup_value):
+        return error("Invalid request")
       
     # Log the request
     log_request('get', model, lookup_field, lookup_value)
@@ -170,7 +201,17 @@ def single_instance_to_dict(request, model, allowed_fields, related_fields, modi
         return None
 
 # Create a new instance:
-def new_instance(request, model, required_fields, allowed_fields, modify_with=unmodified):
+def new_instance(
+    request=False,
+    model=False,
+    required_fields=[],
+    allowed_fields=[],
+    modify_with=unmodified
+):
+  
+    if not (request and model):
+        return error("Invalid Request")
+  
     log_request("new", model, 'new', '')
     
     required_method_type = "POST"
@@ -185,16 +226,21 @@ def new_instance(request, model, required_fields, allowed_fields, modify_with=un
     object_instance = save_object_instance(model, request_dict)
     if not object_instance:
         return error("Error saving object")
-    print("11111", object_instance)
     instance_dict = dict_from_single_object(object_instance, allowed_fields)
-    print("22222", instance_dict)
     instance_dict["success"] = True
     return JsonResponse(instance_dict, safe=False)
   
 # Edit an existing instance
-def edit_instance(request, model, required_fields, allowed_fields, lookup_field=False, lookup_value=False):
-    if not (lookup_field and lookup_value):
-        return error("No lookup field or value")
+def edit_instance(
+    request=False,
+    model=False,
+    required_fields=[],
+    allowed_fields=[],
+    lookup_field=False,
+    lookup_value=False
+):
+    if not (request and model and lookup_field and lookup_value):
+        return error("Invalid request")
   
     log_request("edit", model, lookup_field, lookup_value)
     
@@ -227,9 +273,14 @@ def edit_instance(request, model, required_fields, allowed_fields, lookup_field=
     return JsonResponse(updated_instance_dict, safe=False)
     
 # Delete an existing instance
-def delete_instance(request, model, lookup_field=False, lookup_value=False):
-    if not (lookup_field and lookup_value):
-        return error("No lookup field or value")
+def delete_instance(
+    request=False,
+    model=False,
+    lookup_field=False,
+    lookup_value=False
+):
+    if not (request and model and lookup_field and lookup_value):
+        return error("Invalid request")
       
     log_request("delete by", model, lookup_field, lookup_value)
     

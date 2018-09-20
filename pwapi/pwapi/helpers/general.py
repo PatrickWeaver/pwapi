@@ -5,8 +5,8 @@ import json
 # https://pypi.python.org/pypi/bleach
 import bleach
 # Allow iframe tags and attributes for YouTube videos:
-bleach.sanitizer.ALLOWED_TAGS.append(u"iframe")
-bleach.sanitizer.ALLOWED_ATTRIBUTES[u"iframe"] = [u"width", u"height", u"src", u"frameborder", u"allow", u"allowfullscreen"]
+bleach.sanitizer.ALLOWED_TAGS.append(u'iframe')
+bleach.sanitizer.ALLOWED_ATTRIBUTES[u'iframe'] = [u'width', u'height', u'src', u'frameborder', u'allow', u'allowfullscreen']
 # BeautifulSoup4 is used to get plaintext from HTML (via Markdown)
 # https://www.crummy.com/software/BeautifulSoup/bs4/doc/
 from bs4 import BeautifulSoup
@@ -45,20 +45,22 @@ def log_request(req_type, model, lookup_field, lookup_value):
 def validate_body(request):
     if not request.body:
         return False
-    parsed_body = json.loads(request.body.decode("utf-8"))
-    if "api_key" not in parsed_body:
+    parsed_body = json.loads(request.body.decode('utf-8'))
+    if 'api_key' not in parsed_body:
         return False
-    api_key_valid = check_api_key(bleach.clean(parsed_body["api_key"]))
+    api_key_valid = check_api_key(bleach.clean(parsed_body['api_key']))
     if not api_key_valid:
         return False
     return parsed_body
   
 def convert_text_field(text):
+    html = markdown(text, extensions=['markdown.extensions.extra'])
+    soup = BeautifulSoup(html, 'html5lib')
+    for a in soup.find_all('a'):
+        a.append(' (' + a['href'] + ')')
+    plaintext = bleach.clean(''.join(soup.findAll(text=True)))
     return {
-        "markdown": text,
-        "html": markdown(text, extensions=["markdown.extensions.extra"]),
-        "plaintext": get_plaintext(text)
+        'markdown': text,
+        'html': html,
+        'plaintext': plaintext
     }
-  
-def get_plaintext(markdown_text):
-    return bleach.clean(''.join(BeautifulSoup(markdown_text, "html5lib").findAll(text=True)))
