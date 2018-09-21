@@ -11,9 +11,11 @@ from django.urls import reverse_lazy
 from . models import Upload
 
 def root(request):
-    index_fields = ['uploaded_at', 'filename', 'uuid', 'upload', 'url']
-    order_by = 'uploaded_at'
-    return index_response(request, Upload, index_fields, order_by)
+    return index_response(
+        request=request,
+        model=Upload,
+        order_by='-uploaded_at'
+    )
 
 def new(request):
     print(request.method + ": " + request.path);

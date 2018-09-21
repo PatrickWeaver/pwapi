@@ -6,29 +6,49 @@ from . general import get_model_name, validate_body
 from . responses import error
 from . db import find_single_instance, save_object_instance
 
-def add_child_to(request, parent_model, child_model, parent_key, parent_identifier_value):
+def add_child_to(
+    request=False,
+    parent_model=False,
+    child_model=False,
+    parent_key=False,
+    parent_identifier_value=False,
+    child_field_name_on_parent=False
+):
   
-    def get_modify_with(parent_instance, child_model_name):
-      return getattr(parent_instance, child_model_name).add
+    if not (request and parent_model and child_model and parent_key and parent_identifier_value and child_field_name_on_parent):
+        return error('Invalid request')
+  
+    def get_modify_with(parent_instance, child_field_name_on_parent):
+      return getattr(parent_instance, child_field_name_on_parent).add
     
-    return modify_child_on(request, parent_model, child_model, parent_key, parent_identifier_value, get_modify_with)
+    return modify_child_on(request, parent_model, child_model, parent_key, parent_identifier_value, child_field_name_on_parent, get_modify_with)
   
   
-def remove_child_from(request, parent_model, child_model, parent_key, parent_identifier_value):
+def remove_child_from(
+    request=False,
+    parent_model=False,
+    child_model=False,
+    parent_key=False,
+    parent_identifier_value=False,
+    child_field_name_on_parent=False
+):
   
-    def get_modify_with(parent_instance, child_model_name):
-      return getattr(parent_instance, child_model_name).remove
+    if not (request and parent_model and child_model and parent_key and parent_identifier_value and child_field_name_on_parent):
+        return error('Invalid request')
+  
+    def get_modify_with(parent_instance, child_field_name_on_parent):
+      return getattr(parent_instance, child_field_name_on_parent).remove
     
-    return modify_child_on(request, parent_model, child_model, parent_key, parent_identifier_value, get_modify_with)
+    return modify_child_on(request, parent_model, child_model, parent_key, parent_identifier_value, child_field_name_on_parent, get_modify_with)
     
     
-def modify_child_on(request, parent_model, child_model, parent_key, parent_identifier_value, get_modify_with):
-    child_model_name = get_model_name(child_model)
+def modify_child_on(request, parent_model, child_model, parent_key, parent_identifier_value, child_field_name_on_parent, get_modify_with):
+  
     parsed_body = validate_body(request)
             
     parent_instance = find_single_instance(parent_model, parent_key, parent_identifier_value)
     if not parent_instance:
-        return error(parent_model__name__ + " not found")
+        return error(parent_model.__name__ + " not found")
       
     try:
         child_identifier = parsed_body["identifier"]
@@ -38,7 +58,7 @@ def modify_child_on(request, parent_model, child_model, parent_key, parent_ident
 
     try:
         child_instance = find_single_instance(child_model, child_identifier, child_identifier_value)
-        modify_with = get_modify_with(parent_instance, child_model_name)
+        modify_with = get_modify_with(parent_instance, child_field_name_on_parent)
         modify_with(child_instance)
     except:
         print(sys.exc_info())
@@ -49,8 +69,8 @@ def modify_child_on(request, parent_model, child_model, parent_key, parent_ident
     if not updated_parent_instance_dict:
         return error('Error generating response')
     children_dicts = []
-    for child in updated_parent_instance_dict[child_model_name]:
+    for child in updated_parent_instance_dict[child_field_name_on_parent]:
         children_dicts.append(model_to_dict(child))
-    updated_parent_instance_dict[child_model_name] = children_dicts
+    updated_parent_instance_dict[child_field_name_on_parent] = children_dicts
     updated_parent_instance_dict['success'] = True
     return JsonResponse(updated_parent_instance_dict, safe=False)

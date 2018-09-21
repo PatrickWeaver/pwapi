@@ -14,17 +14,6 @@ import bleach
 # General error message for invalid requests:
 errorJSON = [{'Error': 'No data for that request.'}]
 
-project_related_fields = [
-    {
-        "field_name": "tags",
-        "related_name": "project_tags"
-    },
-    {
-        "field_name": "status",
-        "relateed_name": "project_status"
-    }
-]
-
 
 def index(request):
     return HttpResponse('<h1>Portfolio</h1><ul><li><a href="projects">Projects</a></li><li><a href="tags">Tags</a></li></ul>')
@@ -35,85 +24,101 @@ def index(request):
 # --- --- --- --- --- ---  #
 
 def projects(request):
-    index_fields = [
-        'name',
-        'slug',
-        'description',
-        'start_date',
-        'end_date',
-        'sort_date',
-        'project_url',
-        'source_url',
-        'is_hidden'
-      
-    ] # project_related_fields also added
-    # Add: cover_photo_id
     
-    order_by = '-sort_date'
-    return index_response(request, Project, index_fields, order_by, related_fields=project_related_fields)
-
-  
-project_required_fields = [
-    'name',
-    'status_id'
-]
-project_allowed_fields = [
-    'slug',
-    'description',
-    'start_date',
-    'end_date',
-    'sort_date',
-    'project_url',
-    'source_url',
-    'is_hidden',
-] + project_required_fields # project_related_fields also added later
+    return index_response(
+        request=request,
+        model=Project,
+        order_by='-sort_date'
+    )
 
 def get_project(request, slug):
-    return get_instance(request, Project, slug, project_allowed_fields, related_fields=project_related_fields)
+    return get_instance(
+        request=request,
+        model=Project,
+        lookup_field='slug',
+        lookup_value=slug
+    )
 
 def new_project(request):
-    return new_instance(request, Project, project_required_fields, project_allowed_fields)
+    return new_instance(
+        request=request,
+        model=Project
+    )
   
 def edit_project(request, slug):
-    return edit_instance(request, Project, slug, project_required_fields, project_allowed_fields)
+    return edit_instance(
+        request=request,
+        model=Project,
+        lookup_field='slug',
+        lookup_value=slug
+    )
   
-def delete_project(request, slug):
-    return delete_instance(request, Project, "slug", slug)
+def delete_project_by_slug(request, slug):
+    return delete_instance(
+        request=request,
+        model=Project,
+        lookup_field='slug',
+        lookup_value=slug
+    )
+  
 def delete_project_by_id(request, id):
-    return delete_instance(request, Project, "id", id)
+    return delete_instance(
+        request=request,
+        model=Project,
+        lookup_field='id',
+        lookup_value=id
+    )
     
 
 #  --- --- --- --- --- --- #
 # - - - - - TAGS - - - - - #
 # --- --- --- --- --- ---  #
 
-def modify_new_tags(request_dict):
-    if not request_dict["status"]:
-        request_dict["color"] = None
-        request_dict["name"] = request_dict["name"].lower()
-    return request_dict
-
 def tags(request):   
-    index_fields = ['name', 'slug', 'color', 'status', 'created_date', 'id']
-    order_by = 'name'
-    return index_response(request, Tag, index_fields, order_by)
-
-tag_required_fields = ['name']
-tag_allowed_fields = ['status', 'slug', 'color'] + tag_required_fields
+  
+    return index_response(
+        request=request,
+        model=Tag,
+        order_by='name'
+    )
   
 def get_tag(request, slug):
-    return get_instance(request, Tag, slug, tag_allowed_fields)
+    return get_instance(
+        request=request,
+        model=Tag,
+        lookup_field='slug',
+        lookup_value=slug
+    )
   
 def new_tag(request):
-    return new_instance(request, Tag, tag_required_fields, tag_allowed_fields, modify_with=modify_new_tags)
+    return new_instance(
+        request=request,
+        model=Tag
+    )
       
 def edit_tag(request, slug):
-    return edit_instance(request, Tag, slug, tag_required_fields, tag_allowed_fields)
+    return edit_instance(
+        request=request,
+        model=Tag,
+        lookup_field='slug',
+        lookup_value=slug
+    )
   
-def delete_tag(request, slug):
-    return delete_instance(request, Tag, "slug", slug)
+def delete_tag_by_slug(request, slug):
+    return delete_instance(
+        request=request,
+        model=Tag,
+        lookup_field='slug',
+        lookup_value=slug
+    )
+  
 def delete_tag_by_id(request, id):
-    return delete_instance(request, Tag, "id", id)
+    return delete_instance(
+        request=request,
+        model=Tag,
+        lookup_field='id',
+        lookup_value=id
+    )
 
 
 #  --- --- --- --- --- --- #
@@ -121,33 +126,71 @@ def delete_tag_by_id(request, id):
 # --- --- --- --- --- ---  #
 
 def images(request):
-    index_fields = ['url', 'caption', 'cover', 'uuid', 'created_date', 'project']
-    order_by = 'project'
-    return index_response(request, Image, index_fields, order_by)
-
-image_required_fields = ['url', 'project']
-image_allowed_fields = ['caption', 'cover'] + image_required_fields
+    
+    return index_response(
+        request=request,
+        model=Image,
+        order_by='project'
+    )
   
 def get_image(request, uuid):
-    return get_instance(request, Image, uuid, image_allowed_fields)
+    return get_instance(
+        request=request,
+        model=Image,
+        lookup_field='uuid',
+        lookup_value=uuid
+    )
   
 def new_image(request):
-    return new_instance(request, Image, image_required_fields, image_allowed_fields)
+    return new_instance(
+        request=request,
+        model=Image
+    )
       
 def edit_image(request, uuid):
-    return edit_instance(request, Image, uuid, image_required_fields, image_allowed_fields)
+    return edit_instance(
+        request=request,
+        model=Image,
+        lookup_field='uuid',
+        lookup_value=uuid
+    )
   
-def delete_image(request, uuid):
-    return delete_instance(request, Image, "slug", uuid)
+def delete_image_by_slug(request, uuid):
+    return delete_instance(
+        request=request,
+        model=Image,
+        lookup_field='slug',
+        lookup_value=uuid
+    )
+
 def delete_image_by_id(request, id):
-    return delete_instance(request, Image, "id", id)
+    return delete_instance(
+        request=request,
+        model=Image,
+        lookup_field='id',
+        lookup_value=id
+    )
 
 #  --- --- --- --- --- --- #
 # - - PROJECT <-> TAG  - - #
 # --- --- --- --- --- ---  #
 
 def add_tag_to_project(request, project_slug):
-    return add_child_to(request, Project, Tag, "slug", project_slug)
+    return add_child_to(
+        request=request,
+        parent_model=Project,
+        child_model=Tag,
+        parent_key='slug',
+        parent_identifier_value=project_slug,
+        child_field_name_on_parent='tags'
+    )
   
 def remove_tag_from_project(request, project_slug):
-    return remove_child_from(request, Project, Tag, "slug", project_slug)
+    return remove_child_from(
+        request=request,
+        parent_model=Project,
+        child_model=Tag, 
+        parent_key='slug',
+        parent_identifier_value=project_slug,
+        child_field_name_on_parent='tags'
+    )
