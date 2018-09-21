@@ -74,10 +74,7 @@ def index_response(
         page = default['page']
         quantity = default['quantity']
         end_of_page = page * quantity
-        start_of_page = end_of_page - quantity
-        
-
-    
+        start_of_page = end_of_page - quantity   
     
     # Create admin sanitizer function to remove hidden instances
     admin_sanitizer = check_api_key_and_create_sanitizer(request, model)
@@ -243,23 +240,36 @@ def edit_instance(
     if not check_method_type(request, required_method_type):
         return invalid_method(required_method_type)
       
-    request_dict = check_for_required_and_allowed_fields(request, model, required_fields, allowed_fields)
+    ## No required fields because they might not be changing  
+    request_dict = check_for_required_and_allowed_fields(request, model, [], allowed_fields)
     if not request_dict:
           return error("No body in request or incorrect fields")
       
     instance = find_single_instance(model, lookup_field, lookup_value)
     if not instance:
         return error("Can't find in db.")
-    
-    
+       
     primary_key_field = model._meta.pk.name
     request_dict[primary_key_field] = instance.pk
     
-    object_instance = save_object_instance(model, request_dict)
-    if not object_instance:
+    # Update each property in the instance that is different in the request_dict
+    for i in request_dict:
+        if getattr(instance, i) != request_dict[i]:
+            try:
+                setattr(instance, i, request_dict[i])
+            except:
+                return error('Error updating instance')  
+    
+    # Now check for required_fields
+    for i in required_fields:
+        if not getattr(instance, i):
+            return error('Error updating instance')
+    
+    instance.save()
+    if not instance:
         return error("Error saving object")
     
-    updated_instance_dict = dict_from_single_object(object_instance, allowed_fields)
+    updated_instance_dict = dict_from_single_object(instance, allowed_fields)
     if not updated_instance_dict:
         return error("Error generating response")
       
