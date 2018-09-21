@@ -11,6 +11,25 @@ class Post(models.Model):
     created_date = models.DateTimeField(default=timezone.now, blank=True)
     draft = models.BooleanField(default=False, blank=True)
     
+    
+    index_fields = [
+      'title',
+      'slug',
+      'summary',
+      'post_date',
+      'body',
+      'draft'
+    ]
+    required_fields = ['body']
+    allowed_fields = [
+        'slug',
+        'title',
+        'summary',
+        'post_date',
+        'draft',
+        'id'
+    ] + required_fields
+    
     hide_if = 'draft'
 
     def save(self, *args, **kwargs):  
@@ -19,3 +38,14 @@ class Post(models.Model):
 
     def __str__(self):
         return u'{%s: %s}' % (self.title, self.body)
+    
+    def expand_post_preview(post_dict):
+        plaintext_body = post_dict['body']['plaintext']
+        full_post = False
+        if len(plaintext_body) <= 280:
+            full_post = True
+        post_dict['full_post_in_preview'] = full_post
+        post_dict['post_preview'] = plaintext_body[0:279] + (' . . .' if not full_post else '')
+        del post_dict['body']
+        return post_dict
+    index_modify_with = expand_post_preview

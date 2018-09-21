@@ -11,8 +11,15 @@ class Tag(models.Model):
     slug = models.CharField(max_length=1024, unique=True, blank=True)
     status = models.BooleanField(default=False, blank=True)
     created_date = models.DateTimeField(default=timezone.now, blank=True)
+    
+    index_fields = ['name', 'slug', 'color', 'status', 'created_date', 'id']
+    required_fields = ['name']
+    allowed_fields = ['status', 'slug', 'color', 'id'] + required_fields
 
     def save(self, *args, **kwargs):
+        if not self.status:
+            self.color = None
+            self.name = self.name.lower()   
         self.slug = create_slug(Tag, self.id, self.slug, self.name)
         super(Tag, self).save(*args, **kwargs)
 
@@ -29,7 +36,48 @@ class Project(models.Model):
     source_url = models.CharField(max_length=1024, blank=True, null=True)
     is_hidden = models.BooleanField(default=False, blank=False)
     created_date = models.DateTimeField(default=timezone.now, blank=True)
+    
+    index_fields = [
+        'name',
+        'slug',
+        'description',
+        'start_date',
+        'end_date',
+        'sort_date',
+        'project_url',
+        'source_url',
+        'is_hidden'
+      
+    ]
+    # Add: cover_photo_id
 
+    required_fields = [
+        'name',
+        'status_id'
+    ]
+    allowed_fields = [
+        'slug',
+        'description',
+        'start_date',
+        'end_date',
+        'sort_date',
+        'project_url',
+        'source_url',
+        'is_hidden',
+        'id'
+    ] + required_fields
+    
+    related_fields = [
+        {
+            'field_name': 'tags',
+            'related_name': 'project_tags'
+        },
+        {
+            'field_name': 'status',
+            'relateed_name': 'project_status'
+        }
+    ]
+    
     hide_if = 'is_hidden'
 
     def save(self, *args, **kwargs):
@@ -55,6 +103,11 @@ class Image(models.Model):
     url = models.CharField(max_length=1024)
     created_date = models.DateTimeField(default=timezone.now, blank=True)
     project = models.ForeignKey(Project, on_delete=models.CASCADE)
+    
+    
+    index_fields = ['url', 'caption', 'cover', 'uuid', 'created_date', 'project']
+    required_fields = ['url', 'project']
+    allowed_fields = ['caption', 'cover'] + required_fields
     
     #def save(self, *args, **kwargs):
         #self.order = Image.objects.filter(project=self.project).count() 

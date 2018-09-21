@@ -19,61 +19,34 @@ def index(request):
         'all_posts' : '/v1/blog/posts/'
     }
 
-    return JsonResponse(response, safe=False)
-  
+    return JsonResponse(response, safe=False) 
 
 def posts(request):
-    index_fields = [
-      'title',
-      'slug',
-      'summary',
-      'post_date',
-      'body',
-      'draft'
-    ]
+
     return index_response(
         request=request,
         model=Post,
-        index_fields=index_fields,
-        order_by='-post_date',
-        modify_each_with=expand_preview_post,
-        instance_path_field='slug'
+        order_by='-post_date'
     );
-  
-post_required_fields = ['body']
-post_allowed_fields = [
-    'slug',
-    'title',
-    'summary',
-    'post_date',
-    'draft',
-    'id'
-] + post_required_fields
 
 def get_post(request, slug):
     return get_instance(
         request=request,
         model=Post,
-        allowed_fields=post_allowed_fields,
         lookup_field='slug',
-        lookup_value=slug,
-        instance_path_field='slug'
+        lookup_value=slug
     )
   
 def new_post(request):
     return new_instance(
         request=request,
-        model=Post,
-        required_fields=post_required_fields,
-        allowed_fields=post_allowed_fields
+        model=Post
     )
   
 def edit_post(request, slug):
     return edit_instance(
         request=request,
         model=Post,
-        required_fields=post_required_fields,
-        allowed_fields=post_allowed_fields,
         lookup_field='slug',
         lookup_value=slug
     )
@@ -93,14 +66,3 @@ def delete_post_by_id(request, id):
         lookup_field='id',
         lookup_value=id
     )
-
-
-def expand_preview_post(post_dict):
-    plaintext_body = post_dict['body']['plaintext']
-    full_post = False
-    if len(plaintext_body) <= 280:
-        full_post = True
-    post_dict['full_post_in_preview'] = full_post
-    post_dict['post_preview'] = plaintext_body[0:279] + (' . . .' if not full_post else '')
-    del post_dict['body']
-    return post_dict

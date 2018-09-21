@@ -45,11 +45,7 @@ def invalid_method(type):
 def index_response(
     request=False,
     model=False,
-    index_fields=[],
-    order_by='?',
-    related_fields=[],
-    modify_each_with=unmodified,
-    instance_path_field=False
+    order_by='?'
 ):
     
     if not (request and model):
@@ -58,8 +54,12 @@ def index_response(
     # Log the request
     log_request('get', model, 'index', 'all')
     
+    
+    # Show these fields on index:
+    index_fields = getattr(model, 'index_fields', ['id'])
+    
     # Pagination
-    # Try/except will deal with any non integer values
+    # Try/except will deal with any non integer values other than 'all'
     try:
         page = int(bleach.clean(request.GET.get('page', str(default['page']))))
         quantity_qs = request.GET.get('quantity', str(default['quantity']))
@@ -77,18 +77,20 @@ def index_response(
         start_of_page = end_of_page - quantity   
     
     # Create admin sanitizer function to remove hidden instances
-    admin_sanitizer = check_api_key_and_create_sanitizer(request, model)
+    admin_sanitizer = remove_hidden_func(getattr(model, 'hide_if', False))
     
     # Get all instances from DB   
     filter = {}
     if hasattr(model, 'hide_if'):
         filter[model.hide_if] = False
     ordered_instance_objects_qs = model.objects.filter(**filter).order_by(order_by)
+    # If not all are requested, scope to quantity and page:
     if (end_of_page != None) and (start_of_page != None):
         ordered_instance_objects_qs = ordered_instance_objects_qs[start_of_page:end_of_page]
     
     # get single instance flow on each object
-    on_each_instance = partial(single_instance_to_dict, request, model, index_fields, related_fields, modify_each_with, instance_path_field)
+    modify_each_with = getattr(model, 'index_modify_with', unmodified)
+    on_each_instance = partial(single_instance_to_dict, allowed_fields=index_fields, modify_with=modify_each_with)
     index_list = list(map(
         on_each_instance,
         ordered_instance_objects_qs
@@ -123,18 +125,17 @@ def index_response(
 def get_instance(
     request=False,
     model=False,
-    allowed_fields=[],
     lookup_field=False,
-    lookup_value=False,
-    related_fields=[],
-    modify_with=unmodified,
-    instance_path_field = False
+    lookup_value=False
 ):
     if not (request and model and lookup_field and lookup_value):
         return error("Invalid request")
       
     # Log the request
     log_request('get', model, lookup_field, lookup_value)
+    
+    # Limit response to these fields:
+    allowed_fields = getattr(model, 'allowed_fields', ['id'])
     
     # Check that request uses "GET" method else return error
     required_method_type = "GET"
@@ -143,7 +144,10 @@ def get_instance(
       
     # Get single queryset from db else return error
     instance = find_single_instance(model, lookup_field, lookup_value)
-    instance_dict = single_instance_to_dict(request, model, allowed_fields, related_fields, modify_with, instance_path_field, instance)
+    instance_dict = single_instance_to_dict(
+      instance,
+      allowed_fields = allowed_fields
+    )
   
     if instance_dict:
         return JsonResponse(instance_dict, safe=False)
@@ -151,8 +155,14 @@ def get_instance(
         return error("Can't find in db.")
  
 
-def single_instance_to_dict(request, model, allowed_fields, related_fields, modify_with, instance_path_field, instance):
+def single_instance_to_dict(
+    instance,
+    allowed_fields = False,
+    modify_with = False
+    
+):
     if instance:
+        model = type(instance)
         # Get dict without related objects
         instance_dict = instance.__dict__
     else:
@@ -160,11 +170,13 @@ def single_instance_to_dict(request, model, allowed_fields, related_fields, modi
       
     if instance_dict:
         # Create sanitizer for model, and return error if hidden and no api_key
-        admin_sanitizer = check_api_key_and_create_sanitizer(request, model)       
+        admin_sanitizer = remove_hidden_func(getattr(model, 'hide_if', False))      
         instance_dict = admin_sanitizer(instance_dict)
     
     if instance_dict:
         # Remove non-allowed fields from instance_dict
+        if not allowed_fields:
+            allowed_fields = getattr(model, 'allowed_fields', [])
         instance_dict = remove_non_allowed_fields(instance_dict, allowed_fields)
         
         for field in instance_dict:
@@ -172,17 +184,15 @@ def single_instance_to_dict(request, model, allowed_fields, related_fields, modi
             if model._meta.get_field(field).__class__ is models.TextField and instance_dict[field]:
                 instance_dict[field] = convert_text_field(instance_dict[field])
     
-    if instance_dict:
+    if instance_dict and modify_with:
         # Modify instance dict
         instance_dict = modify_with(instance_dict)
     
+    
     if instance_dict:
         # Get dict of only related objects from instance
+        related_fields = getattr(model, 'related_fields', [])
         related_objects_dict = get_related_objects(related_fields, instance)
-    
-    if instance_dict and instance_path_field:
-        # Add hyperlink
-        instance_dict[get_model_name(model, singular=True) + "_url"] = request.scheme + "://" + request.get_host() + request.path + instance_dict[instance_path_field] + "/"
 
     if instance_dict:
         #if instance_dict["upload"]:
@@ -195,25 +205,25 @@ def single_instance_to_dict(request, model, allowed_fields, related_fields, modi
 # Create a new instance:
 def new_instance(
     request=False,
-    model=False,
-    required_fields=[],
-    allowed_fields=[],
-    modify_with=unmodified
+    model=False
 ):
-  
+
     if not (request and model):
         return error("Invalid Request")
   
     log_request("new", model, 'new', '')
+    
+    # Limit to/Require these fields:
+    allowed_fields = getattr(model, 'allowed_fields', ['id'])
+    required_fields = getattr(model, 'required_fields', [])
     
     required_method_type = "POST"
     if not check_method_type(request, required_method_type):
         return invalid_method(required_method_type)
     
     request_dict = check_for_required_and_allowed_fields(request, model, required_fields, allowed_fields)
-    request_dict = modify_with(request_dict)
     if not request_dict:
-        return error("No body in request or incorrect fields")  
+        return error("Invalid request or API Key") 
       
     object_instance = save_object_instance(model, request_dict)
     if not object_instance:
@@ -226,15 +236,18 @@ def new_instance(
 def edit_instance(
     request=False,
     model=False,
-    required_fields=[],
-    allowed_fields=[],
     lookup_field=False,
     lookup_value=False
 ):
+      
     if not (request and model and lookup_field and lookup_value):
         return error("Invalid request")
   
     log_request("edit", model, lookup_field, lookup_value)
+    
+    # Limit to/require these fields:
+    allowed_fields = getattr(model, 'allowed_fields', ['id'])
+    required_fields = getattr(model, 'required_fields', [])
     
     required_method_type = "POST"
     if not check_method_type(request, required_method_type):
@@ -284,6 +297,7 @@ def delete_instance(
     lookup_field=False,
     lookup_value=False
 ):
+  
     if not (request and model and lookup_field and lookup_value):
         return error("Invalid request")
       
@@ -303,13 +317,6 @@ def delete_instance(
     instance.delete()
     
     return JsonResponse({'success': True})
-
-def check_api_key_and_create_sanitizer(request, model):
-    api_key = bleach.clean(request.GET.get("api_key", ""))
-    if (api_key != "" and check_api_key(api_key)) or not hasattr(model, "hide_if"):
-        return unmodified
-    else:
-        return remove_hidden_func(model.hide_if)
   
 def dict_from_single_object(instance, allowed_fields):
     try:
@@ -324,6 +331,8 @@ def dict_from_single_object(instance, allowed_fields):
       
 def check_for_required_and_allowed_fields(request, model, required_fields = [], allowed_fields = ["api_key"]):
     parsed_body = validate_body(request)
+    if not parsed_body:
+        return False
     parsed_body_with_valid_types = parsed_dict_from(parsed_body, model)
     sanitized_parsed_body = remove_non_allowed_fields(parsed_body, allowed_fields)
     if sanitized_parsed_body == {}:
@@ -381,9 +390,11 @@ def get_related_objects(related_fields, instance):
 
     def related_field_to_dict(model, instance, rf):
         if model._meta.get_field(rf["field_name"]).__class__ is models.ManyToManyField:
+          
+            related_single_instance_to_dict = partial(single_instance_to_dict)
       
             return list(map(
-                model_to_dict,
+                related_single_instance_to_dict,
                 instance_dict[rf["field_name"]]
             ))
         else:

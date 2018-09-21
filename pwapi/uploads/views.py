@@ -14,7 +14,6 @@ def root(request):
     return index_response(
         request=request,
         model=Upload,
-        index_fields=['uploaded_at', 'filename', 'uuid', 'upload', 'url'],
         order_by='-uploaded_at'
     )
 
