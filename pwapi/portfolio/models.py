@@ -15,6 +15,11 @@ class Tag(models.Model):
     index_fields = ['name', 'slug', 'color', 'status', 'created_date', 'id']
     required_fields = ['name']
     allowed_fields = ['status', 'slug', 'color', 'id'] + required_fields
+    
+    api_path = '/v1/portfolio/tags/'
+    api_identifier = 'slug'
+    def get_api_url(self, request):
+      return request.scheme + "://" + request.get_host() + self.api_path + getattr(self, self.api_identifier, '')
 
     def save(self, *args, **kwargs):
         if not self.status:
@@ -79,6 +84,11 @@ class Project(models.Model):
     ]
     
     hide_if = 'is_hidden'
+    
+    api_path = '/v1/portfolio/projects/'
+    api_identifier = 'slug'
+    def get_api_url(self, request):
+      return request.scheme + "://" + request.get_host() + self.api_path + getattr(self, self.api_identifier, '')
 
     def save(self, *args, **kwargs):
         self.slug = create_slug(Project, self.id, self.slug, self.name)

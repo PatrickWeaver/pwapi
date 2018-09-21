@@ -90,7 +90,7 @@ def index_response(
     
     # get single instance flow on each object
     modify_each_with = getattr(model, 'index_modify_with', unmodified)
-    on_each_instance = partial(single_instance_to_dict, allowed_fields=index_fields, modify_with=modify_each_with)
+    on_each_instance = partial(single_instance_to_dict, request=request, allowed_fields=index_fields, modify_with=modify_each_with)
     index_list = list(map(
         on_each_instance,
         ordered_instance_objects_qs
@@ -146,6 +146,7 @@ def get_instance(
     instance = find_single_instance(model, lookup_field, lookup_value)
     instance_dict = single_instance_to_dict(
       instance,
+      request = request,
       allowed_fields = allowed_fields
     )
   
@@ -157,6 +158,7 @@ def get_instance(
 
 def single_instance_to_dict(
     instance,
+    request = False,
     allowed_fields = False,
     modify_with = False
     
@@ -192,8 +194,11 @@ def single_instance_to_dict(
     if instance_dict:
         # Get dict of only related objects from instance
         related_fields = getattr(model, 'related_fields', [])
-        related_objects_dict = get_related_objects(related_fields, instance)
+        related_objects_dict = get_related_objects(request, related_fields, instance)
 
+    if instance_dict and request:
+        instance_dict['api_url'] = instance.get_api_url(request)
+        
     if instance_dict:
         #if instance_dict["upload"]:
         #    instance_dict["url"] = instance.upload.url
@@ -379,7 +384,7 @@ def parse_non_text_field(field_type, value):
 
 # Add related objects as dictionaries
 # Passed to parent function in related_fields
-def get_related_objects(related_fields, instance):
+def get_related_objects(request, related_fields, instance):
     instance_dict = model_to_dict(instance)
     model = type(instance)
     
@@ -391,7 +396,7 @@ def get_related_objects(related_fields, instance):
     def related_field_to_dict(model, instance, rf):
         if model._meta.get_field(rf["field_name"]).__class__ is models.ManyToManyField:
           
-            related_single_instance_to_dict = partial(single_instance_to_dict)
+            related_single_instance_to_dict = partial(single_instance_to_dict, request=request)
       
             return list(map(
                 related_single_instance_to_dict,

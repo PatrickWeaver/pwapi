@@ -31,6 +31,11 @@ class Post(models.Model):
     ] + required_fields
     
     hide_if = 'draft'
+    
+    api_path = '/v1/blog/posts/'
+    api_identifier = 'slug'
+    def get_api_url(self, request):
+      return request.scheme + "://" + request.get_host() + self.api_path + getattr(self, self.api_identifier, '')
 
     def save(self, *args, **kwargs):  
         self.slug = create_slug(Post, self.id, self.slug, self.title, self.body)
