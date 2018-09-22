@@ -1,3 +1,5 @@
+from people.views import check_api_key
+
 # https://docs.python.org/3/library/json.html
 import json
 
@@ -15,11 +17,12 @@ from bs4 import BeautifulSoup
 # https://pypi.python.org/pypi/Markdown
 from markdown import markdown
 
-from people.views import check_api_key
-
 # Default function for unmodified instance dicts
 def unmodified(instance):
   return instance
+
+def invalid_method(type):
+    return error('- Only ' + type  + ' requests are allowed at this endpoint.')
 
 def remove_hidden_func(field):
     if field:
@@ -42,17 +45,6 @@ def get_model_name(model, singular=False):
 def log_request(req_type, model, lookup_field, lookup_value):
   print(req_type, get_model_name(model), 'by', lookup_field, ':', lookup_value)
   
-def validate_body(request):
-    if not request.body:
-        return False
-    parsed_body = json.loads(request.body.decode('utf-8'))
-    if 'api_key' not in parsed_body:
-        return False
-    api_key_valid = check_api_key(bleach.clean(parsed_body['api_key']))
-    if not api_key_valid:
-        return False
-    return parsed_body
-  
 def convert_text_field(text):
     html = markdown(text, extensions=['markdown.extensions.extra'])
     soup = BeautifulSoup(html, 'html5lib')
@@ -64,3 +56,35 @@ def convert_text_field(text):
         'html': html,
         'plaintext': plaintext
     }
+  
+def check_admin(request):
+    # Admin status default false, check api_key to set
+    admin = False
+    if request.method == 'GET':
+        api_key_qs = request.GET.get('api_key', False)
+        if api_key_qs:
+            api_key = bleach.clean(api_key_qs)
+        else:
+            print('Error: no api_key_qs')
+            return False
+    elif request.method == 'POST':
+        '''
+        parsed_body = json.loads(request.body.decode('utf-8'))
+        if 'api_key' not in parsed_body:
+            return False
+        api_key_valid = check_api_key(bleach.clean(parsed_body['api_key']))
+        '''
+    else:
+        # Only GET and POST are valid request methods
+        print('Error: invalid request method:', request.method)
+        return False
+    if api_key:
+        admin = check_api_key(api_key)
+    return admin
+  
+def check_method_type(request, type):
+    print('Required:', request.method)
+    print('Actual:', type)
+    if request.method == type:
+        return True
+    return False

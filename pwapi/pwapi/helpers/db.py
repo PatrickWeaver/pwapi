@@ -1,11 +1,13 @@
 import sys
 
-def find_single_instance(model, lookup_key, lookup_value):
+def find_single_instance(model, lookup_key, lookup_value, admin):
     if lookup_key == "slug":
         lookup_value = lookup_value.lower()
     try:
-        filter_dict = {lookup_key: lookup_value}
-        instance = model.objects.get(**filter_dict)
+        filter = {lookup_key: lookup_value}  
+        if hasattr(model, 'hide_if') and not admin:
+            filter[model.hide_if] = False
+        instance = model.objects.get(**filter)
         return instance
     except:
         print("Instance not found with that identifier")

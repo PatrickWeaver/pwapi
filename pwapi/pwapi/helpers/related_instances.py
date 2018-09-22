@@ -2,7 +2,7 @@ from django.forms.models import model_to_dict
 
 from django.http import JsonResponse
 
-from . general import get_model_name, validate_body
+from . general import get_model_name, invalid_method
 from . responses import error
 from . db import find_single_instance, save_object_instance
 
@@ -44,7 +44,20 @@ def remove_child_from(
     
 def modify_child_on(request, parent_model, child_model, parent_key, parent_identifier_value, child_field_name_on_parent, get_modify_with):
   
-    parsed_body = validate_body(request)
+    required_method_type = "POST"
+    if not check_method_type(request, required_method_type):
+        return invalid_method(required_method_type)
+      
+    parsed_body = json.loads(request.body.decode('utf-8'))
+    if not parsed_body:
+        return False
+      
+    if 'api_key' in parsed_body:
+        admin = check_api_key(parsed_body['api_key'])
+    else:
+        admin = False
+    if not admin:
+        return error('Admin only action')
             
     parent_instance = find_single_instance(parent_model, parent_key, parent_identifier_value)
     if not parent_instance:

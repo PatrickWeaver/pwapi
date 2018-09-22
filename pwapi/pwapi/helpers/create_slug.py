@@ -15,7 +15,8 @@ def create_slug(model, id, *args):
         slug = str(uuid.uuid4())
     
     sanitized_slug = sanitize_for_url(slug)
-    dup_instance = find_single_instance(model, "slug", sanitized_slug)
+    # True for admin because this is not exposed to user input
+    dup_instance = find_single_instance(model, "slug", sanitized_slug, True)
     if dup_instance:
         if id != dup_instance.id:
           sanitized_slug += "-" + str(uuid.uuid4())

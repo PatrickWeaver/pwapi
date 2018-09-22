@@ -61,6 +61,8 @@ def authenticate(request):
     return JsonResponse(instructions, safe=False)
 
 def check_api_key(api_key):
+    if not api_key:
+        return False
     print("CHECKING API KEY:", api_key)
     person_array = Person.objects.filter(api_key=api_key)
     if len(person_array) < 1:
