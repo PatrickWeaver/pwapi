@@ -18,6 +18,12 @@ class Upload(models.Model):
     required_fields = []
     allowed_fields = index_fields
     
+    api_path = '/v1/uploads/'
+    api_identifier = 'uuid'
+    def get_api_url(self, request):
+      #return request.scheme + "://" + request.get_host() + self.api_path + getattr(self, self.api_identifier, '')
+      return ''
+    
     def save(self, *args, **kwargs):
         uuid = str(uuid4())
         self.uuid = uuid
