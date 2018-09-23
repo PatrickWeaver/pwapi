@@ -131,7 +131,7 @@ def upload_file(instance, filename):
       
 class Image(models.Model):
     uuid = models.UUIDField(default=uuid4, max_length=1024, unique=True, blank=True)
-    order = models.IntegerField(default=0, blank=True, unique=True)
+    order = models.IntegerField(blank=True, unique=True)
     cover = models.BooleanField(default=False, blank=True)
     caption = models.CharField(max_length=1024, null=True)
     url = models.CharField(max_length=1024)
@@ -151,7 +151,39 @@ class Image(models.Model):
       return ''
     
     #def save(self, *args, **kwargs):
-        #self.order = Image.objects.filter(project=self.project).count() 
+        #
       
     def save(self, *args, **kwargs):
+        if self.order == None:
+            self.order = Image.objects.filter(project=self.project).count()
+        else:
+            try:
+                order_image = Image.objects.filter(project=self.project, order=self.order).get()
+                if order_image != self:
+                    order_image.order += 1
+                    order_image.save()
+            except:
+                pass
+        
+        if self.cover:
+            try:
+                cover_image = Image.objects.filter(project=self.project, cover=True).get()
+                if cover_image != self:
+                    cover_image.cover = False
+                    cover_image.save()
+                
+            except:
+                pass
+        
         super(Image, self).save(*args, **kwargs)
+        
+    def delete(self, *args, **kwargs):
+        try:
+            project_images = Image.objects.filter(project=self.project).order_by('order')[self.order + 1:]
+            for i in project_images:
+                i.order -= 1
+                i.save()
+        except:
+            pass
+        
+        super(Image, self).delete(*args, **kwargs)        
