@@ -44,6 +44,10 @@ def log_request(req_type, model, lookup_field, lookup_value):
   
 def convert_text_field(text):
     html = markdown(text, extensions=['markdown.extensions.extra'])
+    html_soup = BeautifulSoup(html, 'html5lib')
+    for a in html_soup.find_all('a'):
+        a['target'] = '_blank'
+    html = str(html_soup)
     plaintext = get_plaintext(html, with_links=True)
     return {
         'markdown': text,
