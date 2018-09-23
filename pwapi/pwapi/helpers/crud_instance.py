@@ -7,8 +7,8 @@ from django.http import HttpRequest, HttpResponse, JsonResponse
 from django.forms.models import model_to_dict
 from django.db import models
 
-from . general import unmodified, remove_hidden_func, get_model_name, log_request, convert_text_field, check_method_type, check_admin, invalid_method
-from . responses import error
+from . general import unmodified, remove_hidden_func, get_model_name, log_request, convert_text_field, check_method_type, check_admin
+from . responses import error, invalid_method
 from . db import find_single_instance, save_object_instance
 from people.views import check_api_key
 

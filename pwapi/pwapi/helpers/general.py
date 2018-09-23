@@ -21,9 +21,6 @@ from markdown import markdown
 def unmodified(instance):
   return instance
 
-def invalid_method(type):
-    return error('- Only ' + type  + ' requests are allowed at this endpoint.')
-
 def remove_hidden_func(field):
     if field:
         def closure(instance):

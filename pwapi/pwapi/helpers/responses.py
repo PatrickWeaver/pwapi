@@ -5,3 +5,5 @@ def error(message):
     errorJSON = [{'Error': 'No data for that request. ' + message}]
     return JsonResponse(errorJSON, safe=False)
   
+def invalid_method(type):
+    return error('- Only ' + type  + ' requests are allowed at this endpoint.')

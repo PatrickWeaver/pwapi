@@ -2,8 +2,8 @@ from django.forms.models import model_to_dict
 
 from django.http import JsonResponse
 
-from . general import get_model_name, invalid_method
-from . responses import error
+from . general import get_model_name
+from . responses import error, invalid_method
 from . db import find_single_instance, save_object_instance
 
 def add_child_to(
