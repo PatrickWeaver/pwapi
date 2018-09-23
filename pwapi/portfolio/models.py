@@ -86,15 +86,18 @@ class Project(models.Model):
     related_fields = [
         {
             'field_name': 'tags',
-            'key_name': 'tags'
+            'key_name': 'tags',
+            'sort': 'name'
         },
         {
             'field_name': 'status',
-            'key_name': 'status'
+            'key_name': 'status',
+            'sort': 'name'
         },
         {
             'field_name': 'image_set',
-            'key_name': 'images'
+            'key_name': 'images',
+            'sort': 'order'
         }
     ]
     
@@ -139,7 +142,7 @@ class Image(models.Model):
     
     index_fields = ['url', 'caption', 'cover', 'uuid', 'created_date', 'project', 'project_id']
     required_fields = ['url', 'project_id']
-    allowed_fields = ['caption', 'cover', 'uuid'] + required_fields
+    allowed_fields = ['caption', 'cover', 'uuid', 'order'] + required_fields
     
     hide_if = 'is_hidden'
     

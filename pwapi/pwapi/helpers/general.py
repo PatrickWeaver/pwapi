@@ -47,15 +47,20 @@ def log_request(req_type, model, lookup_field, lookup_value):
   
 def convert_text_field(text):
     html = markdown(text, extensions=['markdown.extensions.extra'])
-    soup = BeautifulSoup(html, 'html5lib')
-    for a in soup.find_all('a'):
-        a.append(' (' + a['href'] + ')')
-    plaintext = bleach.clean(''.join(soup.findAll(text=True)))
+    plaintext = get_plaintext(html, with_links=True)
     return {
         'markdown': text,
         'html': html,
         'plaintext': plaintext
     }
+  
+def get_plaintext(html_text, with_links=False):
+    soup = BeautifulSoup(html_text, 'html5lib')
+    if with_links:
+        for a in soup.find_all('a'):
+            a.append(' (' + a['href'] + ')')
+    plaintext = bleach.clean(''.join(soup.findAll(text=True)))
+    return plaintext
   
 def check_admin(request):
     # Admin status default false, check api_key to set

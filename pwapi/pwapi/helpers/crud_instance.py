@@ -423,23 +423,21 @@ def get_related_objects(request, related_fields, instance):
 
                 related_single_instance_to_dict = partial(single_instance_to_dict, request=request)
 
-                return list(map(
+                return sorted(list(map(
                     related_single_instance_to_dict,
                     instance_dict[rf['field_name']]
-                ))
+                )), key=lambda k: k[rf['sort']])
             elif model._meta.get_field(rf['field_name']).__class__ is models.ManyToOneRel:
-                print("###")
-                print(instance)
                 print(getattr(instance, rf['field_name']).all())
             else:
                 return model_to_dict(getattr(instance, rf['field_name']))
         except:
             related_single_instance_to_dict = partial(single_instance_to_dict, request=request)
             
-            return list(map(
+            return sorted(list(map(
                 related_single_instance_to_dict,
                 getattr(instance, rf['field_name']).all()
-            )) 
+            )), key=lambda k: k[rf['sort']])
           
     related_values = list(map(        
         partial(related_field_to_dict, model, instance),

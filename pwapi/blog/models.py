@@ -1,6 +1,7 @@
 from django.db import models
 from django.utils import timezone
 from pwapi.helpers.create_slug import create_slug
+from pwapi.helpers.general import get_plaintext
 
 class Post(models.Model):
     title = models.CharField(max_length=1024, null=True)
@@ -45,7 +46,8 @@ class Post(models.Model):
         return u'{%s: %s}' % (self.title, self.body)
     
     def expand_post_preview(post_dict):
-        plaintext_body = post_dict['body']['plaintext']
+        html_body = post_dict['body']['html']
+        plaintext_body = get_plaintext(html_body)
         full_post = False
         if len(plaintext_body) <= 280:
             full_post = True
