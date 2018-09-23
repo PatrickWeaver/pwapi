@@ -413,25 +413,37 @@ def get_related_objects(request, related_fields, instance):
     model = type(instance)
     
     related_keys = list(map(
-        lambda rf: rf["field_name"],
+        lambda rf: rf['key_name'],
         related_fields
     ))
 
     def related_field_to_dict(model, instance, rf):
-        if model._meta.get_field(rf["field_name"]).__class__ is models.ManyToManyField:
-          
+        try:
+            if model._meta.get_field(rf['field_name']).__class__ is models.ManyToManyField:
+
+                related_single_instance_to_dict = partial(single_instance_to_dict, request=request)
+
+                return list(map(
+                    related_single_instance_to_dict,
+                    instance_dict[rf['field_name']]
+                ))
+            elif model._meta.get_field(rf['field_name']).__class__ is models.ManyToOneRel:
+                print("###")
+                print(instance)
+                print(getattr(instance, rf['field_name']).all())
+            else:
+                return model_to_dict(getattr(instance, rf['field_name']))
+        except:
             related_single_instance_to_dict = partial(single_instance_to_dict, request=request)
-      
+            
             return list(map(
                 related_single_instance_to_dict,
-                instance_dict[rf["field_name"]]
-            ))
-        else:
-            return model_to_dict(getattr(instance, rf["field_name"]))
+                getattr(instance, rf['field_name']).all()
+            )) 
           
-    related_values = list(map(
-      partial(related_field_to_dict, model, instance),
-      related_fields
+    related_values = list(map(        
+        partial(related_field_to_dict, model, instance),
+        related_fields
     ))
 
     return dict(zip(related_keys, related_values))

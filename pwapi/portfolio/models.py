@@ -1,9 +1,13 @@
-import uuid
+from uuid import uuid4
 
 from django.db import models
 from django.utils import timezone
 
 from pwapi.helpers.create_slug import create_slug
+
+# - - - - - - - - - - - - - -
+# - - - - Tag - - - - - - - - 
+# - - - - - - - - - - - - - -
 
 class Tag(models.Model):
     name = models.CharField(max_length=50, unique=True)
@@ -28,6 +32,12 @@ class Tag(models.Model):
         self.slug = create_slug(Tag, self.id, self.slug, self.name)
         super(Tag, self).save(*args, **kwargs)
 
+        
+        
+# - - - - - - - - - - - - - -
+# - - - Project - - - - - - - 
+# - - - - - - - - - - - - - -
+      
 class Project(models.Model):
     name = models.CharField(max_length=1024)
     slug = models.CharField(max_length=1024, unique=True, blank=True)
@@ -51,7 +61,8 @@ class Project(models.Model):
         'sort_date',
         'project_url',
         'source_url',
-        'is_hidden'
+        'is_hidden',
+        'id'
       
     ]
     # Add: cover_photo_id
@@ -75,11 +86,15 @@ class Project(models.Model):
     related_fields = [
         {
             'field_name': 'tags',
-            'related_name': 'project_tags'
+            'key_name': 'tags'
         },
         {
             'field_name': 'status',
-            'relateed_name': 'project_status'
+            'key_name': 'status'
+        },
+        {
+            'field_name': 'image_set',
+            'key_name': 'images'
         }
     ]
     
@@ -104,20 +119,36 @@ def get_sort_date(end_date, start_date):
         return start_date
     else:
         return timezone.now()
+
+# - - - - - - - - - - - - - -
+# - - - - - Image - - - - - -
+# - - - - - - - - - - - - - -
+def upload_file(instance, filename):
+    return instance.uuid    
       
 class Image(models.Model):
-    uuid = models.UUIDField(default=uuid.uuid4, editable=False, blank=True)
+    uuid = models.UUIDField(default=uuid4, max_length=1024, unique=True, blank=True)
     order = models.IntegerField(default=0, blank=True, unique=True)
     cover = models.BooleanField(default=False, blank=True)
     caption = models.CharField(max_length=1024, null=True)
     url = models.CharField(max_length=1024)
     created_date = models.DateTimeField(default=timezone.now, blank=True)
     project = models.ForeignKey(Project, on_delete=models.CASCADE)
+    is_hidden = models.BooleanField(default=False, blank=False)
     
     
-    index_fields = ['url', 'caption', 'cover', 'uuid', 'created_date', 'project']
-    required_fields = ['url', 'project']
-    allowed_fields = ['caption', 'cover'] + required_fields
+    index_fields = ['url', 'caption', 'cover', 'uuid', 'created_date', 'project', 'project_id']
+    required_fields = ['url', 'project_id']
+    allowed_fields = ['caption', 'cover', 'uuid'] + required_fields
+    
+    hide_if = 'is_hidden'
+    
+    def get_api_url(self, request):
+      #return request.scheme + "://" + request.get_host() + self.api_path + getattr(self, self.api_identifier, '')
+      return ''
     
     #def save(self, *args, **kwargs):
         #self.order = Image.objects.filter(project=self.project).count() 
+      
+    def save(self, *args, **kwargs):
+        super(Image, self).save(*args, **kwargs)

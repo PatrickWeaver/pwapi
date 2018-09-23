@@ -125,8 +125,7 @@ def delete_tag_by_id(request, id):
 # - - - - IMAGES - - - - - #
 # --- --- --- --- --- ---  #
 
-def images(request):
-    
+def images(request):   
     return index_response(
         request=request,
         model=Image,
@@ -159,7 +158,7 @@ def delete_image_by_slug(request, uuid):
     return delete_instance(
         request=request,
         model=Image,
-        lookup_field='slug',
+        lookup_field='uuid',
         lookup_value=uuid
     )
 

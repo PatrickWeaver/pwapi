@@ -53,15 +53,18 @@ urlpatterns = [
     path('image/new/', csrf_exempt(views.new_image), name='portfolio-image-new'),
     path('images/new/', csrf_exempt(views.new_image), name='portfolio-images-new'),
   
-    path('image/<slug:slug>/', views.get_image, name='portfolio-image-get'),
-    path('images/<slug:slug>/', views.get_image, name='portfolio-images-get'),
+    path('image/<uuid:uuid>/', views.get_image, name='portfolio-image-get'),
+    path('images/<uuid:uuid>/', views.get_image, name='portfolio-images-get'),
 
-    path('image/<slug:slug>/edit/', csrf_exempt(views.edit_image), name='portfolio-image-edit'),
-    path('images/<slug:slug>/edit/', csrf_exempt(views.edit_image), name='portfolio-images-edit'),
+    path('image/<uuid:uuid>/edit/', csrf_exempt(views.edit_image), name='portfolio-image-edit'),
+    path('images/<uuid:uuid>/edit/', csrf_exempt(views.edit_image), name='portfolio-images-edit'),
   
-    path('image/<slug:slug>/delete/', csrf_exempt(views.delete_image_by_slug), name='portfolio-image-delete'),
-    path('images/<slug:slug>/delete/', csrf_exempt(views.delete_image_by_slug), name='portfolio-images-delete'),
+    path('image/<uuid:uuid>/delete/', csrf_exempt(views.delete_image_by_slug), name='portfolio-image-delete'),
+    path('images/<uuid:uuid>/delete/', csrf_exempt(views.delete_image_by_slug), name='portfolio-images-delete'),
     path('image-id/<int:id>/delete/', csrf_exempt(views.delete_image_by_id), name='blog-image-by-id-delete'),
+  
+    #path('
+  
   
     path('uploads/', include('uploads.urls'))
 ]
