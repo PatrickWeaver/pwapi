@@ -56,9 +56,11 @@ INSTALLED_APPS = [
     'django.contrib.messages',
     'django.contrib.staticfiles',
     'storages',
+    'corsheaders',
 ]
 
 MIDDLEWARE = [
+    'corsheaders.middleware.CorsMiddleware',
     'django.middleware.security.SecurityMiddleware',
     'django.contrib.sessions.middleware.SessionMiddleware',
     'django.middleware.common.CommonMiddleware',
@@ -167,3 +169,5 @@ S3_USE_SIGV4 = True
 AWS_QUERYSTRING_AUTH = False
 
 DEFAULT_FILE_STORAGE = 'uploads.views.UploadStorage'
+
+CORS_ORIGIN_ALLOW_ALL = True

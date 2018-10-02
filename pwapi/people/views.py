@@ -26,10 +26,10 @@ def people(request):
 
 def authenticate(request):
     error = False
-    print(request.body)
+    print(request.body.decode("utf-8"))
     if request.method == "POST":
         if request.body:
-            jsonData = json.loads(request.body)
+            jsonData = json.loads(request.body.decode("utf-8"))
             if jsonData["username"] and jsonData["password"]:
                 username = bleach.clean(jsonData["username"])
                 password = jsonData["password"]
@@ -61,10 +61,12 @@ def authenticate(request):
     return JsonResponse(instructions, safe=False)
 
 def check_api_key(api_key):
-    print("CHECKING API KEY")
+    if not api_key:
+        return False
+    print("CHECKING API KEY:", api_key)
     person_array = Person.objects.filter(api_key=api_key)
     if len(person_array) < 1:
-        print("AUTH ERROR: PERSON NO FOUND OR INVALID API KEY")
+        print("AUTH ERROR: PERSON NOT FOUND OR INVALID API KEY")
         return False
     person = person_array[0]
     # Eventually here we should check if they are an admin or if they have permissions to post to the blog
@@ -73,4 +75,5 @@ def check_api_key(api_key):
     #if not (getattr(person, "type") == "admin"):
         return False
     # API Key is valid, maybe make this more complicated at some point:
+    print("API KEY VALID")
     return True
