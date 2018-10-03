@@ -1,4 +1,4 @@
-from people.views import check_api_key
+from people.models import Person
 
 # https://docs.python.org/3/library/json.html
 import json
@@ -94,3 +94,21 @@ def check_method_type(request, type):
     if request.method == type:
         return True
     return False
+  
+def check_api_key(api_key):
+    if not api_key:
+        return False
+    print("CHECKING API KEY:", api_key)
+    person_array = Person.objects.filter(api_key=api_key)
+    if len(person_array) < 1:
+        print("AUTH ERROR: PERSON NOT FOUND OR INVALID API KEY")
+        return False
+    person = person_array[0]
+    # Eventually here we should check if they are an admin or if they have permissions to post to the blog
+    if False:
+        print("FALSE IN CHECK API KEY")
+    #if not (getattr(person, "type") == "admin"):
+        return False
+    # API Key is valid, maybe make this more complicated at some point:
+    print("API KEY VALID")
+    return True
