@@ -2,7 +2,6 @@ from django.shortcuts import render
 from django.http import HttpRequest, HttpResponse, JsonResponse
 from django.forms.models import model_to_dict
 from blog.models import Post
-from people.views import check_api_key
 from pwapi.helpers.crud_instance import index_response, get_instance, new_instance, edit_instance, delete_instance
 
 from datetime import datetime

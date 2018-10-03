@@ -5,7 +5,6 @@ from pwapi.helpers.crud_instance import index_response, get_instance, new_instan
 from pwapi.helpers.related_instances import add_child_to, remove_child_from
 from pwapi.helpers.general import unmodified
 
-from people.views import check_api_key
 
 import bleach
 

@@ -7,10 +7,9 @@ from django.http import HttpRequest, HttpResponse, JsonResponse
 from django.forms.models import model_to_dict
 from django.db import models
 
-from . general import unmodified, remove_hidden_func, get_model_name, log_request, convert_text_field, check_method_type, check_admin
-from . responses import error, invalid_method
-from . db import find_single_instance, save_object_instance
-from people.views import check_api_key
+from pwapi.helpers.general import unmodified, remove_hidden_func, get_model_name, log_request, convert_text_field, check_method_type, check_admin, check_api_key
+from pwapi.helpers.responses import error, invalid_method
+from pwapi.helpers.db import find_single_instance, save_object_instance
 
 # https://docs.python.org/3/library/json.html
 import json
@@ -154,7 +153,11 @@ def get_instance(
     )
   
     if instance_dict:
-        return JsonResponse(instance_dict, safe=False)
+        response = {
+            get_model_name(model, singular=True): instance_dict,
+            'admin': admin
+        }
+        return JsonResponse(response, safe=False)
     else:
         return error("Can't find in db.")
  
