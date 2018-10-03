@@ -41,6 +41,7 @@ class Tag(models.Model):
 class Project(models.Model):
     name = models.CharField(max_length=1024)
     slug = models.CharField(max_length=1024, unique=True, blank=True)
+    short_description = models.CharField(max_length=1024, blank=True, null=True)
     description = models.TextField(default='', blank=True)
     start_date = models.DateTimeField(null=True, blank=True)
     end_date = models.DateTimeField(null=True, blank=True)
@@ -55,6 +56,7 @@ class Project(models.Model):
     index_fields = [
         'name',
         'slug',
+        'short_description',
         'description',
         'start_date',
         'end_date',
@@ -73,6 +75,7 @@ class Project(models.Model):
     ]
     allowed_fields = [
         'slug',
+        'short_description',
         'description',
         'start_date',
         'end_date',
@@ -186,4 +189,4 @@ class Image(models.Model):
         except:
             pass
         
-        super(Image, self).delete(*args, **kwargs)        
+        super(Image, self).delete(*args, **kwargs)
