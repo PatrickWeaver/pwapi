@@ -7,8 +7,6 @@ from pwapi.helpers.general import unmodified
 
 from people.views import check_api_key
 
-# https://docs.python.org/3/library/json.html
-import json
 import bleach
 
 # General error message for invalid requests:

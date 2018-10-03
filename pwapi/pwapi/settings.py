@@ -45,6 +45,7 @@ else:
 
 # Application definition
 INSTALLED_APPS = [
+    'blobs.apps.BlobsConfig',
     'blog.apps.BlogConfig',
     'people.apps.PeopleConfig',
     'portfolio.apps.PortfolioConfig',

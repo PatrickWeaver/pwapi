@@ -7,5 +7,5 @@ export PYTHONUNBUFFERED=true
 echo Starting Gunicorn.
 cd pwapi
 exec gunicorn pwapi.wsgi:application \
-    --bind 0.0.0.0:3000 \
+    --bind 0.0.0.0:8000 \
     --workers 1
