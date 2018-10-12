@@ -1,10 +1,10 @@
 # PW API
 
-Version: 1.1.0
+Version: 1.1.2
 
 Python 3.6
 
-Django 2.1
+Django 2.1.2
 
 ## Set Up:
 
