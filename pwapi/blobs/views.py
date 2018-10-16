@@ -33,7 +33,7 @@ def new_blob(request):
 
 def edit_blob(request, slug):
     return edit_instance(
-        requst=request,
+        request=request,
         model=Blob,
         lookup_field='slug',
         lookup_value=slug
