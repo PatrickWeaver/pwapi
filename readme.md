@@ -1,6 +1,6 @@
 # PW API
 
-Version: 1.1.4
+Version: 1.1.5
 
 Python 3.6
 
