@@ -144,9 +144,9 @@ class Image(models.Model):
     is_hidden = models.BooleanField(default=False, blank=False)
     
     
-    index_fields = ['url', 'caption', 'cover', 'uuid', 'created_date', 'project', 'project_id']
+    index_fields = ['url', 'caption', 'cover', 'alt_text', 'uuid', 'created_date', 'project', 'project_id']
     required_fields = ['url', 'project_id']
-    allowed_fields = ['caption', 'cover', 'uuid', 'order'] + required_fields
+    allowed_fields = ['caption', 'cover', 'alt_text', 'uuid', 'order'] + required_fields
     
     hide_if = 'is_hidden'
     
