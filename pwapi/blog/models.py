@@ -33,6 +33,8 @@ class Post(models.Model):
     
     hide_if = 'draft'
     
+    allowed_filters = []
+    
     api_path = '/v1/blog/posts/'
     api_identifier = 'slug'
     def get_api_url(self, request):

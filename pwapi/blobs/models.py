@@ -31,6 +31,8 @@ class Blob(models.Model):
 
     hide_if = 'is_hidden'
 
+    allowed_filters = []
+
     api_path = '/v1/blobs/'
     api_identifier = 'slug'
 

@@ -17,6 +17,8 @@ class Upload(models.Model):
     index_fields = ['uploaded_at', 'filename', 'uuid', 'upload', 'url']
     required_fields = []
     allowed_fields = index_fields
+
+    allowed_filters = []
     
     api_path = '/v1/uploads/'
     api_identifier = 'uuid'

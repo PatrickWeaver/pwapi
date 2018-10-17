@@ -25,6 +25,10 @@ class Tag(models.Model):
     def get_api_url(self, request):
       return request.scheme + "://" + request.get_host() + self.api_path + getattr(self, self.api_identifier, '')
 
+    allowed_filters = [
+        "status"
+    ]
+
     def save(self, *args, **kwargs):
         if not self.status:
             self.color = None
@@ -106,6 +110,8 @@ class Project(models.Model):
     
     hide_if = 'is_hidden'
     
+    allowed_filters = []
+
     api_path = '/v1/portfolio/projects/'
     api_identifier = 'slug'
     def get_api_url(self, request):
@@ -149,6 +155,8 @@ class Image(models.Model):
     allowed_fields = ['caption', 'cover', 'alt_text', 'uuid', 'order'] + required_fields
     
     hide_if = 'is_hidden'
+
+    allowed_filters = []
     
     def get_api_url(self, request):
       #return request.scheme + "://" + request.get_host() + self.api_path + getattr(self, self.api_identifier, '')

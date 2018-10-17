@@ -58,7 +58,7 @@ def index_response(
     # Try/except will deal with any non integer values other than 'all'
     try:
         page = int(bleach.clean(request.GET.get('page', str(default['page']))))
-        quantity_qs = request.GET.get('quantity', str(default['quantity']))
+        quantity_qs = bleach.clean(request.GET.get('quantity', str(default['quantity'])))
         if quantity_qs == 'all':
             end_of_page = None
             start_of_page = None
@@ -77,6 +77,22 @@ def index_response(
     filter = {}
     if hasattr(model, 'hide_if') and not admin:
         filter[model.hide_if] = False
+
+    # Get other filters from model:
+    if hasattr(model, 'allowed_filters'):
+        for new_filter in model.allowed_filters:
+            filter_qs = ''
+            try:
+                filter_qs = request.GET.get(new_filter, str(''))
+                filter_qs = bleach.clean(filter_qs)
+            except:
+                pass
+            if filter_qs != '':
+                if filter_qs.lower() == "false":
+                    filter_qs = False
+                elif filter_qs.lower() == "true":
+                    filter_qs = True
+                filter[new_filter] = filter_qs
         
     ordered_instance_objects_qs = model.objects.filter(**filter).order_by(order_by)
     # If not all are requested, scope to quantity and page:
@@ -91,13 +107,8 @@ def index_response(
         ordered_instance_objects_qs
     ))
     
-    # Get count of items on all pages, exclude hidden if not admin:
-    if not admin:
-        number_of = model.objects.all().count()
-    else:
-        key = model.hide_if
-        filter_dict = {key: False}
-        number_of = model.objects.filter(**filter_dict).count() 
+    # Get count of items on all pages:
+    number_of = model.objects.filter(**filter).count()
     
     # Create response dict
     model_name = get_model_name(model)
