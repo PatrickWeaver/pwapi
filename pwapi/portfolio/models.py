@@ -140,7 +140,7 @@ def upload_file(instance, filename):
       
 class Image(models.Model):
     uuid = models.UUIDField(default=uuid4, max_length=1024, unique=True, blank=True)
-    order = models.IntegerField(blank=True, unique=True)
+    order = models.IntegerField(blank=True)
     cover = models.BooleanField(default=False, blank=True)
     alt_text = models.CharField(max_length=1024, blank=True, null=True)
     caption = models.CharField(max_length=1024, blank=True, null=True)
