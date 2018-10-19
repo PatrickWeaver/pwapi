@@ -6,6 +6,8 @@ from pwapi.helpers.general import get_plaintext
 class Post(models.Model):
     title = models.CharField(max_length=1024, null=True)
     slug = models.CharField(max_length=1024, unique=True, blank=True)
+    cover_image_url = models.CharField(max_length=1025, blank=True, null=True)
+    cover_image_alt_text = models.CharField(max_length=1025, blank=True, null=True)
     summary = models.TextField(null=True)
     body = models.TextField()
     post_date = models.DateTimeField(default=timezone.now, blank=True)
@@ -14,16 +16,20 @@ class Post(models.Model):
     
     
     index_fields = [
-      'title',
-      'slug',
-      'summary',
-      'post_date',
-      'body',
-      'draft'
+        'title',
+        'slug',
+        'cover_image_url',
+        'cover_image_alt_text',
+        'summary',
+        'post_date',
+        'body',
+        'draft'
     ]
     required_fields = ['body']
     allowed_fields = [
         'slug',
+        'cover_image_url',
+        'cover_image_alt_text',
         'title',
         'summary',
         'post_date',
