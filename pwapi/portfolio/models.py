@@ -32,6 +32,10 @@ class Tag(models.Model):
         "status"
     ]
 
+    allowed_filters = [
+        "status"
+    ]
+
     def save(self, *args, **kwargs):
         if not self.status:
             self.color = None
