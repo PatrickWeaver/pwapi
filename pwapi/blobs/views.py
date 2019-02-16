@@ -1,67 +1,56 @@
 from django.shortcuts import render
 from django.http import HttpRequest, HttpResponse, JsonResponse
-from django.forms.models import model_to_dict
-from blog.models import Post
+
+from blobs.models import Blob
+from people.views import check_api_key
 from pwapi.helpers.crud_instance import index_response, get_instance, new_instance, edit_instance, delete_instance
 
-from datetime import datetime
-# https://docs.python.org/3/library/json.html
 import json
 
 # General error message for invalid requests:
 errorJSON = [{'Error': 'No data for that request.'}]
 
-# This function returns all of the posts in the API.
-# At some point this might require pagination
-def index(request):
-    response = {
-        'all_posts' : '/v1/blog/posts/'
-    }
-
-    return JsonResponse(response, safe=False) 
-
-def posts(request):
-
+def blobs(request):
     return index_response(
         request=request,
-        model=Post,
-        order_by='-post_date'
+        model=Blob,
+        order_by='-created_date'
     )
 
-def get_post(request, slug):
+def get_blob(request, slug):
     return get_instance(
         request=request,
-        model=Post,
+        model=Blob,
         lookup_field='slug',
         lookup_value=slug
     )
-  
-def new_post(request):
+
+def new_blob(request):
     return new_instance(
         request=request,
-        model=Post
+        model=Blob
     )
-  
-def edit_post(request, slug):
+
+def edit_blob(request, slug):
     return edit_instance(
         request=request,
-        model=Post,
+        model=Blob,
         lookup_field='slug',
         lookup_value=slug
     )
-  
-def delete_post_by_slug(request, slug):
+
+def delete_blob_by_slug(request, slug):
     return delete_instance(
         request=request,
-        model=Post,
+        model=Blob,
         lookup_field='slug',
         lookup_value=slug
     )
-  
-def delete_post_by_id(request, id):
+
+def delete_blob_by_id(request, id):
     return delete_instance(
         request=request,
-        model=Post,
+        model=Blob,
         lookup_field='id',
         lookup_value=id
     )

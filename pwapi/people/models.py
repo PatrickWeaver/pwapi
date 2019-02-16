@@ -20,6 +20,8 @@ class Person(models.Model):
     allowed_fields = [] + required_fields
     
     hide_if = None
+
+    allowed_filters = []
     
     api_path = '/v1/people/'
     api_identifier = 'username'

@@ -6,8 +6,6 @@ from pwapi.helpers.related_instances import add_child_to, remove_child_from
 from pwapi.helpers.general import unmodified
 
 
-# https://docs.python.org/3/library/json.html
-import json
 import bleach
 
 # General error message for invalid requests:

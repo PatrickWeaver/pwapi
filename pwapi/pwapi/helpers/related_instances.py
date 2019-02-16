@@ -2,9 +2,12 @@ from django.forms.models import model_to_dict
 
 from django.http import JsonResponse
 
-from . general import get_model_name
+from . general import get_model_name, check_method_type, check_api_key
 from . responses import error, invalid_method
 from . db import find_single_instance, save_object_instance
+
+# https://docs.python.org/3/library/json.html
+import json
 
 def add_child_to(
     request=False,
@@ -51,7 +54,7 @@ def modify_child_on(request, parent_model, child_model, parent_key, parent_ident
     parsed_body = json.loads(request.body.decode('utf-8'))
     if not parsed_body:
         return False
-      
+    
     if 'api_key' in parsed_body:
         admin = check_api_key(parsed_body['api_key'])
     else:
@@ -59,7 +62,7 @@ def modify_child_on(request, parent_model, child_model, parent_key, parent_ident
     if not admin:
         return error('Admin only action')
             
-    parent_instance = find_single_instance(parent_model, parent_key, parent_identifier_value)
+    parent_instance = find_single_instance(parent_model, parent_key, parent_identifier_value, admin)
     if not parent_instance:
         return error(parent_model.__name__ + " not found")
       
@@ -70,7 +73,7 @@ def modify_child_on(request, parent_model, child_model, parent_key, parent_ident
         return error('No identifier provided')
 
     try:
-        child_instance = find_single_instance(child_model, child_identifier, child_identifier_value)
+        child_instance = find_single_instance(child_model, child_identifier, child_identifier_value, admin)
         modify_with = get_modify_with(parent_instance, child_field_name_on_parent)
         modify_with(child_instance)
     except:

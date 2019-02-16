@@ -46,8 +46,8 @@ def new_person(request):
         admin = check_api_key(parsed_body['api_key'])
     else:
         admin = False
-    #if not admin:
-    #    return error('Admin only action')
+    if not admin:
+        return error('Admin only action')
     
     parsed_body['hashed_password'] = bcrypt.hashpw(parsed_body['password'].encode('utf-8'), bcrypt.gensalt())
     try:
