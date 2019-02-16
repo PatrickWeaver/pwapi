@@ -10,13 +10,15 @@ class Blob(models.Model):
     body = models.TextField()
     created_date = models.DateTimeField(default=timezone.now, blank=True)
     is_hidden = models.BooleanField(default=False, blank=True)
+    redirect = models.TextField(max_length=1024, default="")
 
     index_fields = [
         'title',
         'slug',
         'body',
         'created_date',
-        'is_hidden'
+        'is_hidden',
+        'redirect'
     ]
 
     required_fields = ['body']
@@ -26,7 +28,8 @@ class Blob(models.Model):
         'slug',
         'is_hidden',
         'id',
-        'created_date'
+        'created_date',
+        'redirect'
     ] + required_fields
 
     hide_if = 'is_hidden'

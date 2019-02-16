@@ -1,6 +1,9 @@
+import sys, os
+
 from uuid import uuid4
 
-from django.db import models
+from django.db import models, transaction
+from django.db.models import F, Max
 from django.utils import timezone
 
 from pwapi.helpers.create_slug import create_slug
@@ -23,7 +26,11 @@ class Tag(models.Model):
     api_path = '/v1/portfolio/tags/'
     api_identifier = 'slug'
     def get_api_url(self, request):
-      return request.scheme + "://" + request.get_host() + self.api_path + getattr(self, self.api_identifier, '')
+        return request.scheme + "://" + request.get_host() + self.api_path + getattr(self, self.api_identifier, '')
+
+    allowed_filters = [
+        "status"
+    ]
 
     allowed_filters = [
         "status"
@@ -115,7 +122,7 @@ class Project(models.Model):
     api_path = '/v1/portfolio/projects/'
     api_identifier = 'slug'
     def get_api_url(self, request):
-      return request.scheme + "://" + request.get_host() + self.api_path + getattr(self, self.api_identifier, '')
+        return request.scheme + "://" + request.get_host() + self.api_path + getattr(self, self.api_identifier, '')
 
     def save(self, *args, **kwargs):
         self.slug = create_slug(Project, self.id, self.slug, self.name)
@@ -136,8 +143,9 @@ def get_sort_date(end_date, start_date):
 # - - - - - Image - - - - - -
 # - - - - - - - - - - - - - -
 def upload_file(instance, filename):
-    return instance.uuid    
-      
+    return instance.uuid       
+    
+    
 class Image(models.Model):
     uuid = models.UUIDField(default=uuid4, max_length=1024, unique=True, blank=True)
     order = models.IntegerField(blank=True)
@@ -149,7 +157,7 @@ class Image(models.Model):
     project = models.ForeignKey(Project, on_delete=models.CASCADE)
     is_hidden = models.BooleanField(default=False, blank=False)
     
-    
+
     index_fields = ['url', 'caption', 'cover', 'alt_text', 'uuid', 'created_date', 'project', 'project_id']
     required_fields = ['url', 'project_id']
     allowed_fields = ['caption', 'cover', 'alt_text', 'uuid', 'order'] + required_fields
@@ -160,23 +168,62 @@ class Image(models.Model):
     
     def get_api_url(self, request):
       #return request.scheme + "://" + request.get_host() + self.api_path + getattr(self, self.api_identifier, '')
-      return ''
+        return ''
     
-    #def save(self, *args, **kwargs):
-        #
       
     def save(self, *args, **kwargs):
-        if self.order == None:
-            self.order = Image.objects.filter(project=self.project).count()
-        else:
-            try:
-                order_image = Image.objects.filter(project=self.project, order=self.order).get()
-                if order_image != self:
-                    order_image.order += 1
-                    order_image.save()
-            except:
-                pass
         
+        try:
+            obj = Image.objects.filter(project=self.project, uuid=self.uuid).get()
+            new_order = self.order
+            qs = Image.objects.get_queryset()
+        
+            with transaction.atomic():
+                if obj.order > int(new_order):
+                    qs.filter(
+                        project = obj.project,
+                        order__lt = obj.order,
+                        order__gte = new_order,
+                    ).exclude(
+                        pk = obj.pk,
+                    ).update(
+                        order = F('order') + 1,
+                    )
+                else:
+                    qs.filter(
+                        project = obj.project,
+                        order__lte = new_order,
+                        order__gt = obj.order,
+                    ).exclude(
+                        pk = obj.pk,
+                    ).update(
+                        order = F('order') - 1,
+                    )
+
+                obj.order = new_order
+        except Exception as e:
+            print("#****#*#*#*#**#*#*#")
+            exc_type, exc_obj, exc_tb = sys.exc_info()
+            fname = os.path.split(exc_tb.tb_frame.f_code.co_filename)[1]
+            print(exc_type, fname, exc_tb.tb_lineno)
+            
+            print("*********** EXCEPTION __ IN CREATE MODE")
+            instance = self
+        
+            with transaction.atomic():
+
+                results = Image.objects.filter(
+                    project = instance.project,
+                ).aggregate(
+                    Max('order')
+                )
+
+                current_order = results['order__max']
+                if current_order is None:
+                    current_order = 0
+
+                value = current_order + 1
+                instance.order = value
         if self.cover:
             try:
                 cover_image = Image.objects.filter(project=self.project, cover=True).get()

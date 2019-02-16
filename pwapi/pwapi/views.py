@@ -10,5 +10,6 @@ def v1(request):
     header +
     "<h2>Version 1:</h2>" +
     "<a href='blog/posts/'>Blog Posts</a><br>" +
-    "<a href='portfolio/'>Portfolio</a>"
+    "<a href='portfolio/'>Portfolio</a><br>" +
+    "<a href='blobs/'>Blobs</a><br>"
     )
