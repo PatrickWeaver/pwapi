@@ -32,10 +32,6 @@ class Tag(models.Model):
         "status"
     ]
 
-    allowed_filters = [
-        "status"
-    ]
-
     def save(self, *args, **kwargs):
         if not self.status:
             self.color = None
@@ -143,8 +139,33 @@ def get_sort_date(end_date, start_date):
 # - - - - - Image - - - - - -
 # - - - - - - - - - - - - - -
 def upload_file(instance, filename):
-    return instance.uuid       
-    
+    return instance.uuid
+  
+  
+def move_images(project, open_spot, move_until_spot, non_moving_pk):
+    qs = Image.objects.get_queryset()
+        
+    with transaction.atomic():
+        if move_until_spot > open_spot:
+            qs.filter(
+                project = project,
+                order__lt = move_until_spot,
+                order__gte = open_spot,
+            ).exclude(
+                pk = non_moving_pk,
+            ).update(
+                order = F('order') + 1,
+            )
+        else:
+            qs.filter(
+                project = project,
+                order__lte = open_spot,
+                order__gt = move_until_spot,
+            ).exclude(
+                pk = non_moving_pk,
+            ).update(
+                order = F('order') - 1,
+            )
     
 class Image(models.Model):
     uuid = models.UUIDField(default=uuid4, max_length=1024, unique=True, blank=True)
@@ -172,58 +193,44 @@ class Image(models.Model):
     
       
     def save(self, *args, **kwargs):
+        # Getting Blank URLS:
+        # This isn't working right now
+        if self.url == "  " or self.url == " ":
+          PRINT("HELLO!!!!")
+          self.url = None
+      
+        # Reorder
+        number_of_images = Image.objects.filter(
+            project = self.project,
+        ).aggregate(
+            Max('order')
+        )['order__max']
         
+        if number_of_images is None:
+            number_of_images = 0
+        
+        max_order = number_of_images + 1
+        
+        
+        self.order = int(self.order)
+        if self.order == 0:
+          self.order = 1
+        elif not self.order or self.order < 1 or self.order > max_order:
+            self.order = max_order
+            
         try:
             obj = Image.objects.filter(project=self.project, uuid=self.uuid).get()
-            new_order = self.order
-            qs = Image.objects.get_queryset()
-        
-            with transaction.atomic():
-                if obj.order > int(new_order):
-                    qs.filter(
-                        project = obj.project,
-                        order__lt = obj.order,
-                        order__gte = new_order,
-                    ).exclude(
-                        pk = obj.pk,
-                    ).update(
-                        order = F('order') + 1,
-                    )
-                else:
-                    qs.filter(
-                        project = obj.project,
-                        order__lte = new_order,
-                        order__gt = obj.order,
-                    ).exclude(
-                        pk = obj.pk,
-                    ).update(
-                        order = F('order') - 1,
-                    )
+            move_images(obj.project, self.order, obj.order, obj.pk)
 
-                obj.order = new_order
         except Exception as e:
-            print("#****#*#*#*#**#*#*#")
+            print("*#*#*#*#*#*#*#*#*#*#*#*#*")
             exc_type, exc_obj, exc_tb = sys.exc_info()
             fname = os.path.split(exc_tb.tb_frame.f_code.co_filename)[1]
             print(exc_type, fname, exc_tb.tb_lineno)
+            print("*#*#*#*#*#*#*#*#*#*#*#*#*")
+
+            move_images(self.project, self.order, number_of_images, None)
             
-            print("*********** EXCEPTION __ IN CREATE MODE")
-            instance = self
-        
-            with transaction.atomic():
-
-                results = Image.objects.filter(
-                    project = instance.project,
-                ).aggregate(
-                    Max('order')
-                )
-
-                current_order = results['order__max']
-                if current_order is None:
-                    current_order = 0
-
-                value = current_order + 1
-                instance.order = value
         if self.cover:
             try:
                 cover_image = Image.objects.filter(project=self.project, cover=True).get()
@@ -235,6 +242,7 @@ class Image(models.Model):
                 pass
         
         super(Image, self).save(*args, **kwargs)
+        
         
     def delete(self, *args, **kwargs):
         try:

@@ -89,8 +89,8 @@ def check_admin(request):
     return admin
   
 def check_method_type(request, type):
-    print('Required:', request.method)
-    print('Actual:', type)
+    print('Actual:', request.method)
+    print('Required:', type)
     if request.method == type:
         return True
     return False
