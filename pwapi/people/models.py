@@ -6,6 +6,7 @@ def generate_api_key():
 
 class Person(models.Model):
     username = models.CharField(max_length=50, unique=True)
+    client_id = models.CharField(default=generate_api_key, max_length=255, unique=True, blank=True)
     hashed_password = models.BinaryField(max_length=255)
     name = models.CharField(max_length=255)
     email = models.EmailField(unique=True)
@@ -36,6 +37,7 @@ class Person(models.Model):
         return {
           #"id": self.id,
           "username": self.username,
+          "id": self.client_id,
           "name": self.name,
           "email": self.email,
           "api_key": self.api_key
