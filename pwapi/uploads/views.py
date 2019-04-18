@@ -26,6 +26,16 @@ def new(request):
         return upload_file(request)
 
 def upload_file(request):
+  
+    #print("REQUEST")
+    print(request)
+    #count = 0;
+    #count += 1
+    #for i in request:
+    #  print(i)
+    #print('- - - - - - - - ')
+  
+  
     try:
         file_dict = {
             "upload": request.FILES["file"]

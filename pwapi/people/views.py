@@ -28,6 +28,22 @@ def people(request):
     print(people_list)
     return JsonResponse(people_list, safe=False)
   
+def person(request):
+    if request.method == "POST":
+          if request.body:
+              jsonData = json.loads(request.body.decode("utf-8"))
+              if jsonData["id"]:
+                  client_id = bleach.clean(jsonData["id"])
+                  try:
+                      person = Person.objects.filter(client_id=client_id)[0]
+                      response = {**Person.admin_view(person), **{'success': True}}
+                      return JsonResponse(response, safe=False)
+                  except IndexError:
+                      return JsonResponse({"Error": "Invalid"}, safe=False)
+                  except:
+                      print(sys.exc_info())
+                      return JsonResponse({"Error": "Invalid"}, safe=False)
+  
 def new_person(request):
     required_method_type = "POST"
     if not check_method_type(request, required_method_type):
@@ -69,7 +85,7 @@ def new_person(request):
 
 def authenticate(request):
     error = False
-    print(request.body.decode("utf-8"))
+    #print(request.body.decode("utf-8"))
     if request.method == "POST":
         if request.body:
             jsonData = json.loads(request.body.decode("utf-8"))
